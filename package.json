@@ -1,12 +1,13 @@
 {
-  "name": "fop-vscode-extension",
+  "name": "vscode-feature-oriented-programming",
   "publisher": "Luuk Kablan",
   "author": {
     "email": "luckyluuk02@gmail.com",
     "name": "Luuk Kablan",
     "url": "https://kablan.nl"
   },
-  "displayName": "Feature-Oriented Programming",
+  "icon": "./VSC_FoP.png",
+  "displayName": "VSC FoP",
   "description": "A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE",
   "version": "0.0.1",
   "engines": {
@@ -14,9 +15,6 @@
   },
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onView:featureTreeView"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -34,7 +32,8 @@
       "explorer": [
         {
           "id": "featureTreeView",
-          "name": "Feature Model"
+          "name": "Feature Model",
+          "icon": "./VSC_FoP.png"
         }
       ]
     }
