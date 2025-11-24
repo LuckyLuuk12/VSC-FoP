@@ -1,5 +1,11 @@
 {
   "name": "fop-vscode-extension",
+  "publisher": "Luuk Kablan",
+  "author": {
+    "email": "luckyluuk02@gmail.com",
+    "name": "Luuk Kablan",
+    "url": "https://kablan.nl"
+  },
   "displayName": "Feature-Oriented Programming",
   "description": "A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE",
   "version": "0.0.1",
