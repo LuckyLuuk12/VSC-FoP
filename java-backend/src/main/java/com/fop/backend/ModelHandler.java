@@ -107,6 +107,10 @@ public class ModelHandler {
             // Parse JSON string manually (simple JSON parser)
             FeatureData rootFeature = parseJsonFeature(jsonData);
 
+            // Clean up whitespace text nodes from root element
+            Element rootElement = doc.getDocumentElement();
+            removeWhitespaceNodes(rootElement);
+
             // Get or create struct element
             NodeList structNodes = doc.getElementsByTagName("struct");
             Element structElement;
@@ -118,12 +122,12 @@ public class ModelHandler {
                 }
             } else {
                 structElement = doc.createElement("struct");
-                doc.getDocumentElement().appendChild(structElement);
+                rootElement.appendChild(structElement);
             }
 
             // Build XML from JSON
-            Element rootElement = buildXmlFromFeature(doc, rootFeature);
-            structElement.appendChild(rootElement);
+            Element newRootFeature = buildXmlFromFeature(doc, rootFeature);
+            structElement.appendChild(newRootFeature);
 
             // Write back to file
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -140,6 +144,27 @@ public class ModelHandler {
         } catch (Exception e) {
             e.printStackTrace();
             return "{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}";
+        }
+    }
+
+    private static void removeWhitespaceNodes(Element element) {
+        NodeList children = element.getChildNodes();
+        List<Node> nodesToRemove = new ArrayList<>();
+        
+        for (int i = 0; i < children.getLength(); i++) {
+            Node node = children.item(i);
+            if (node.getNodeType() == Node.TEXT_NODE) {
+                String text = node.getTextContent();
+                if (text.trim().isEmpty()) {
+                    nodesToRemove.add(node);
+                }
+            } else if (node.getNodeType() == Node.ELEMENT_NODE) {
+                removeWhitespaceNodes((Element) node);
+            }
+        }
+        
+        for (Node node : nodesToRemove) {
+            element.removeChild(node);
         }
     }
 

@@ -55,6 +55,9 @@ export class FeatureTreeVisualization {
                         case 'addChild':
                             await this.handleAddChild(message.parentPath, message.childData);
                             break;
+                        case 'removeNode':
+                            await this.handleRemoveNode(message.nodePath);
+                            break;
                     }
                 },
                 undefined,
@@ -88,13 +91,18 @@ export class FeatureTreeVisualization {
             // Find parent and add child
             const parent = this.getNodeAtPath(this.model.root, parentPath);
             if (parent) {
+                // Check if we should auto-update parent type BEFORE modifying children
+                const shouldUpdateParentType = parent.type === 'feature' && 
+                                              (!parent.children || parent.children.length === 0);
+                
                 if (!parent.children) {
                     parent.children = [];
                 }
                 
-                // Auto-update parent type from 'feature' to 'and' if adding first child
-                if (childData.updateParentToAnd && parent.type === 'feature' && parent.children.length === 0) {
+                // Auto-update parent type from 'feature' to 'and' if it was a leaf node
+                if (shouldUpdateParentType) {
                     parent.type = 'and';
+                    console.log(`[FOP] Auto-updated parent "${parent.name}" type from 'feature' to 'and'`);
                 }
                 
                 parent.children.push({
@@ -135,6 +143,59 @@ export class FeatureTreeVisualization {
         }
     }
 
+    private async handleRemoveNode(nodePath: number[]) {
+        console.log('[FOP] handleRemoveNode called with path:', nodePath);
+        
+        if (!this.model || !this.modelPath) {
+            console.error('[FOP] No model or modelPath available');
+            return;
+        }
+
+        try {
+            // Can't remove root node
+            if (nodePath.length === 0) {
+                console.error('[FOP] Attempted to remove root node');
+                vscode.window.showErrorMessage('Cannot remove the root node');
+                return;
+            }
+
+            // Get parent node and remove the child
+            const parentPath = nodePath.slice(0, -1);
+            const childIndex = nodePath[nodePath.length - 1];
+            const parent = this.getNodeAtPath(this.model.root, parentPath);
+
+            console.log('[FOP] Parent node:', parent);
+            console.log('[FOP] Child index to remove:', childIndex);
+
+            if (parent && parent.children && parent.children[childIndex]) {
+                const removedNode = parent.children[childIndex];
+                console.log('[FOP] Removing node:', removedNode.name);
+                
+                parent.children.splice(childIndex, 1);
+
+                // If parent now has no children and is not a simple feature, convert it to leaf
+                if (parent.children.length === 0 && ['and', 'or', 'alt'].includes(parent.type)) {
+                    const oldType = parent.type;
+                    parent.type = 'feature';
+                    console.log(`[FOP] Auto-updated parent "${parent.name}" type from '${oldType}' to 'feature' (now a leaf)`);
+                }
+
+                // Save to file
+                console.log('[FOP] Saving model to file...');
+                await this.saveModelToFile();
+
+                vscode.window.showInformationMessage(`Node "${removedNode.name}" removed successfully`);
+                console.log('[FOP] Node removed successfully');
+            } else {
+                console.error('[FOP] Could not find node to remove. Parent:', parent, 'Child index:', childIndex);
+                vscode.window.showErrorMessage('Could not find node to remove');
+            }
+        } catch (error) {
+            console.error('[FOP] Error removing node:', error);
+            vscode.window.showErrorMessage(`Failed to remove node: ${error}`);
+        }
+    }
+
     private async saveModelToFile() {
         if (!this.model || !this.modelPath) return;
 
@@ -164,8 +225,8 @@ export class FeatureTreeVisualization {
     private getWebviewContent(): string {
         const modelJson = this.model ? JSON.stringify(this.model.root) : 'null';
         const hasModel = this.model !== null;
-
-        return `<!DOCTYPE html>
+        // @ts-ignore ignore the html tag error, this html allows syntax highlighting in vscode
+        return html`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -401,12 +462,29 @@ export class FeatureTreeVisualization {
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.6);
-            z-index: 9999;
+            z-index: 9998;
             justify-content: center;
             align-items: center;
         }
 
         #modal-overlay.show {
+            display: flex;
+        }
+
+        #confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #confirm-overlay.show {
             display: flex;
         }
 
@@ -499,6 +577,15 @@ export class FeatureTreeVisualization {
             background: var(--vscode-button-secondaryHoverBackground);
         }
 
+        .button-danger {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .button-danger:hover {
+            background: #b71c1c;
+        }
+
         hr {
             border: none;
             border-top: 1px solid var(--vscode-editorWidget-border);
@@ -562,10 +649,25 @@ export class FeatureTreeVisualization {
             <div class="button-group">
                 <div class="button-group-left">
                     <button class="button-primary" id="add-child-btn">Add Child</button>
+                    <button class="button-danger" id="remove-node-btn">Remove Node</button>
                 </div>
                 <div class="button-group-right">
                     <button class="button-secondary" id="modal-cancel">Cancel</button>
                     <button class="button-primary" id="modal-save">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-overlay">
+        <div id="modal-dialog">
+            <h2>Confirm Deletion</h2>
+            <p id="confirm-message"></p>
+            <div class="button-group">
+                <div class="button-group-right">
+                    <button class="button-secondary" id="confirm-cancel">Cancel</button>
+                    <button class="button-danger" id="confirm-delete">Delete</button>
                 </div>
             </div>
         </div>
@@ -625,6 +727,14 @@ export class FeatureTreeVisualization {
         const modalCancel = document.getElementById('modal-cancel');
         const modalSave = document.getElementById('modal-save');
         const addChildBtn = document.getElementById('add-child-btn');
+        const removeNodeBtn = document.getElementById('remove-node-btn');
+        
+        // Confirmation dialog
+        const confirmOverlay = document.getElementById('confirm-overlay');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmCancel = document.getElementById('confirm-cancel');
+        const confirmDelete = document.getElementById('confirm-delete');
+        let pendingRemoveAction = null;
 
         function showModal(feature, path) {
             currentEditingNode = feature;
@@ -639,6 +749,23 @@ export class FeatureTreeVisualization {
             document.getElementById('child-name').value = '';
             document.getElementById('child-mandatory').checked = false;
             document.getElementById('child-abstract').checked = false;
+
+            // Disable remove button for root node
+            const removeBtn = document.getElementById('remove-node-btn');
+            if (removeBtn) {
+                if (path.length === 0) {
+                    removeBtn.disabled = true;
+                    removeBtn.style.opacity = '0.5';
+                    removeBtn.style.cursor = 'not-allowed';
+                } else {
+                    removeBtn.disabled = false;
+                    removeBtn.style.opacity = '1';
+                    removeBtn.style.cursor = 'pointer';
+                }
+                console.log('Remove button state:', { disabled: removeBtn.disabled, path: path });
+            } else {
+                console.error('Remove button not found in showModal');
+            }
 
             modalOverlay.classList.add('show');
         }
@@ -672,6 +799,97 @@ export class FeatureTreeVisualization {
 
             hideModal();
         });
+
+        // Remove button handler
+        console.log('Setting up remove button handler, button exists:', !!removeNodeBtn);
+        if (removeNodeBtn) {
+            removeNodeBtn.addEventListener('click', function(e) {
+                console.log('Remove button clicked!');
+                console.log('Button disabled:', removeNodeBtn.disabled);
+                console.log('Current editing node:', currentEditingNode);
+                console.log('Current editing path:', currentEditingPath);
+                
+                if (removeNodeBtn.disabled) {
+                    console.log('Button is disabled, aborting');
+                    return;
+                }
+                
+                if (!currentEditingNode || !currentEditingPath) {
+                    console.log('No editing node or path, aborting');
+                    return;
+                }
+                
+                // Check if node has children
+                const hasChildren = currentEditingNode.children && currentEditingNode.children.length > 0;
+                
+                let message = 'Are you sure you want to remove "' + currentEditingNode.name + '"?';
+                if (hasChildren) {
+                    const childCount = currentEditingNode.children.length;
+                    const plural = childCount > 1 ? 'ren' : '';
+                    message += ' This node has ' + childCount + ' child' + plural + ', which will also be removed.';
+                }
+                
+                // Store the action to perform if confirmed
+                pendingRemoveAction = {
+                    nodePath: currentEditingPath,
+                    nodeName: currentEditingNode.name
+                };
+                
+                console.log('Showing confirmation dialog with message:', message);
+                console.log('Confirm overlay element:', confirmOverlay);
+                console.log('Confirm message element:', confirmMessage);
+                
+                // Show confirmation dialog
+                confirmMessage.innerHTML = message;
+                confirmOverlay.classList.add('show');
+                
+                console.log('Confirmation dialog should now be visible');
+            });
+            console.log('Remove button event listener attached successfully');
+        } else {
+            console.error('Remove button not found!');
+        }
+        
+        // Confirmation dialog handlers
+        console.log('Setting up confirmation dialog handlers');
+        console.log('Confirm cancel button:', confirmCancel);
+        console.log('Confirm delete button:', confirmDelete);
+        
+        if (confirmCancel) {
+            confirmCancel.addEventListener('click', function() {
+                console.log('Cancel button clicked');
+                confirmOverlay.classList.remove('show');
+                pendingRemoveAction = null;
+            });
+        }
+        
+        if (confirmDelete) {
+            confirmDelete.addEventListener('click', function() {
+                console.log('Delete button clicked, pendingRemoveAction:', pendingRemoveAction);
+                if (pendingRemoveAction) {
+                    console.log('Sending removeNode message with path:', pendingRemoveAction.nodePath);
+                    vscode.postMessage({
+                        command: 'removeNode',
+                        nodePath: pendingRemoveAction.nodePath
+                    });
+                    confirmOverlay.classList.remove('show');
+                    hideModal();
+                    pendingRemoveAction = null;
+                } else {
+                    console.error('No pending remove action!');
+                }
+            });
+        }
+        
+        // Close confirmation dialog when clicking outside
+        if (confirmOverlay) {
+            confirmOverlay.addEventListener('click', function(e) {
+                if (e.target === confirmOverlay) {
+                    confirmOverlay.classList.remove('show');
+                    pendingRemoveAction = null;
+                }
+            });
+        }
 
         addChildBtn.addEventListener('click', () => {
             if (!currentEditingPath) return;
