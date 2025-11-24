@@ -24,6 +24,7 @@ application {
 }
 
 jar {
+    archiveBaseName = 'backend'
     manifest {
         attributes 'Main-Class': 'com.fop.backend.BackendMain'
     }

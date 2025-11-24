@@ -17,8 +17,19 @@ public class BackendMain {
                     return;
                 }
                 String modelPath = args[1];
-                String modelJson = ModelLoader.loadModel(modelPath);
+                String modelJson = ModelHandler.loadModel(modelPath);
                 System.out.println(modelJson);
+                break;
+
+            case "saveModel":
+                if (args.length < 3) {
+                    System.out.println("Missing model path or data.");
+                    return;
+                }
+                String savePath = args[1];
+                String jsonData = args[2];
+                String saveResult = ModelHandler.saveModel(savePath, jsonData);
+                System.out.println(saveResult);
                 break;
 
             case "buildVariant":

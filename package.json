@@ -24,10 +24,34 @@
         "title": "FOP: Load Model"
       },
       {
+        "command": "fop.refreshModel",
+        "title": "FOP: Refresh Model",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fop.showTreeVisualization",
+        "title": "FOP: Show Tree Visualization",
+        "icon": "$(type-hierarchy)"
+      },
+      {
         "command": "fop.buildVariant",
         "title": "FOP: Build Variant"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fop.refreshModel",
+          "when": "view == featureTreeView",
+          "group": "navigation"
+        },
+        {
+          "command": "fop.showTreeVisualization",
+          "when": "view == featureTreeView",
+          "group": "navigation"
+        }
+      ]
+    },
     "views": {
       "explorer": [
         {

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { FeatureTreeProvider } from './FeatureTreeProvider';
+import { FeatureTreeVisualization } from './FeatureTreeVisualization';
 import { JavaBridge } from './JavaBridge';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export async function activate(context: vscode.ExtensionContext) {
     //  Workspace validation 
@@ -13,25 +15,68 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const hasJavaFiles = (await vscode.workspace.findFiles("**/*.java", "**/node_modules/**")).length > 0;
     if (!hasJavaFiles) {
-        vscode.window.showWarningMessage("No Java files detected. FOP tools only apply to Java projects.");
-        return;
+        console.log("[FOP] No Java files detected in workspace.");
     }
 
     const gradle = (await vscode.workspace.findFiles("**/build.gradle")).length > 0;
     const maven = (await vscode.workspace.findFiles("**/pom.xml")).length > 0;
 
-    if (!gradle && !maven) {
+    if (!gradle && !maven && hasJavaFiles) {
         vscode.window.showWarningMessage("No Gradle or Maven build found. Some FOP tasks may not work.");
     }
+
+    //  Java backend bridge 
+    const javaBridge = new JavaBridge(
+        path.join(context.extensionPath, "java-backend", "build", "libs", "backend-1.0.0.jar")
+    );
 
     //  Tree provider 
     const featureTreeProvider = new FeatureTreeProvider();
     vscode.window.registerTreeDataProvider('featureTreeView', featureTreeProvider);
+    
+    //  Tree visualization webview
+    const treeVisualization = new FeatureTreeVisualization(context.extensionPath, javaBridge);
 
-    //  Java backend bridge 
-    const javaBridge = new JavaBridge(
-        path.join(context.extensionPath, "java-backend", "build", "libs", "backend.jar")
-    );
+    // Helper function to detect and load FOP model
+    async function detectAndLoadModel(): Promise<boolean> {
+        // Look for model.xml in workspace root
+        console.log("[FOP] Searching for model.xml in workspace root...");
+        const modelFiles = await vscode.workspace.findFiles("model.xml", null);
+        
+        console.log(`[FOP] Found ${modelFiles.length} model.xml file(s)`);
+        if (modelFiles.length === 0) {
+            console.log("[FOP] No model.xml found in workspace root");
+            return false;
+        }
+        
+        modelFiles.forEach((file, index) => {
+            console.log(`[FOP] Model ${index + 1}: ${file.fsPath}`);
+        });
+
+        try {
+            const modelPath = modelFiles[0].fsPath;
+            console.log(`[FOP] Loading model from: ${modelPath}`);
+            const modelData = await javaBridge.loadModel(modelPath);
+            
+            if (modelData.status === "ok") {
+                featureTreeProvider.setModel(modelData);
+                treeVisualization.setModel(modelData, modelPath);
+                treeVisualization.show();
+                vscode.window.showInformationMessage(`FOP model loaded from ${path.basename(path.dirname(modelPath))}`);
+                return true;
+            } else {
+                vscode.window.showErrorMessage(`Failed to load model: ${modelData.message}`);
+                return false;
+            }
+        } catch (error) {
+            console.error("[FOP] Error loading model:", error);
+            vscode.window.showErrorMessage(`Error loading model: ${error}`);
+            return false;
+        }
+    }
+
+    // Auto-load model on activation
+    await detectAndLoadModel();
 
     //  Commands 
     const loadModel = vscode.commands.registerCommand("fop.loadModel", async () => {
@@ -43,9 +88,30 @@ export async function activate(context: vscode.ExtensionContext) {
         });
         if (!file) return;
 
-        const result = await javaBridge.call(["loadModel", file[0].fsPath]);
-        featureTreeProvider.refreshWithModel(result);
-        vscode.window.showInformationMessage("Model loaded.");
+        try {
+            const modelData = await javaBridge.loadModel(file[0].fsPath);
+            
+            if (modelData.status === "ok") {
+                featureTreeProvider.setModel(modelData);
+                treeVisualization.setModel(modelData, file[0].fsPath);
+                vscode.window.showInformationMessage("Model loaded successfully.");
+            } else {
+                vscode.window.showErrorMessage(`Failed to load model: ${modelData.message}`);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error loading model: ${error}`);
+        }
+    });
+
+    const refreshModel = vscode.commands.registerCommand("fop.refreshModel", async () => {
+        const loaded = await detectAndLoadModel();
+        if (!loaded) {
+            vscode.window.showWarningMessage("No model.xml found in workspace. Use 'Load Feature Model' to select manually.");
+        }
+    });
+
+    const showTreeVisualization = vscode.commands.registerCommand("fop.showTreeVisualization", () => {
+        treeVisualization.show();
     });
 
     const buildVariant = vscode.commands.registerCommand("fop.buildVariant", async () => {
@@ -53,7 +119,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("Variant built:\n" + result);
     });
 
-    context.subscriptions.push(loadModel, buildVariant);
+    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant);
 }
 
 export function deactivate() {}
