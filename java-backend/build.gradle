@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.fop'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Scaffold only - no dependencies added yet
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+application {
+    mainClass = 'com.fop.backend.BackendMain'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.fop.backend.BackendMain'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task copyJar(type: Copy) {
+    from jar
+    into '../out'
+}
+
+build.dependsOn copyJar

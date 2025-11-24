@@ -1,0 +1,56 @@
+{
+  "name": "fop-vscode-extension",
+  "publisher": "Luuk Kablan",
+  "author": {
+    "email": "luckyluuk02@gmail.com",
+    "name": "Luuk Kablan",
+    "url": "https://kablan.nl"
+  },
+  "displayName": "Feature-Oriented Programming",
+  "description": "A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:featureTreeView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "fop.loadModel",
+        "title": "FOP: Load Model"
+      },
+      {
+        "command": "fop.buildVariant",
+        "title": "FOP: Build Variant"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "featureTreeView",
+          "name": "Feature Model"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.0"
+  }
+}

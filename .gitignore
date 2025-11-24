@@ -1,0 +1,17 @@
+node_modules
+out
+dist
+*.vsix
+.vscode-test/
+*.log
+
+# Java backend
+java-backend/build/
+java-backend/.gradle/
+java-backend/bin/
+*.jar
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
