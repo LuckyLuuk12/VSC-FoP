@@ -54,6 +54,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/g
 **Unix/Linux/Mac:**
 ```bash
 cd java-backend
+wget -O ./gradle/wrapper/gradle-wrapper.jar "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
 ./gradlew build
 ```
 
