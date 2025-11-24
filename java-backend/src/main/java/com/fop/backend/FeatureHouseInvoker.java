@@ -1,16 +1,11 @@
 package com.fop.backend;
 
+
 public class FeatureHouseInvoker {
-    public FeatureHouseInvoker() {
-        // Scaffold only - no logic
-    }
 
-    public void invoke(String variantConfig) {
-        // Scaffold only - no logic
-    }
-
-    public String getOutput() {
-        // Scaffold only - no logic
-        return "";
+    public static String buildVariant() {
+        // TODO: call FeatureHouse/AHEAD toolchain
+        // TODO: execute composition and return the output folder path
+        return "Variant built (placeholder).";
     }
 }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { FeatureItem } from './FeatureItem';
 
 export class FeatureTreeProvider implements vscode.TreeDataProvider<FeatureItem> {
+    private model: any = null;
     private _onDidChangeTreeData: vscode.EventEmitter<FeatureItem | undefined | null | void> = new vscode.EventEmitter<FeatureItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<FeatureItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
@@ -23,4 +24,10 @@ export class FeatureTreeProvider implements vscode.TreeDataProvider<FeatureItem>
         // Scaffold only - no logic
         return Promise.resolve([]);
     }
+
+    refreshWithModel(model: string) {
+        this.model = JSON.parse(model);
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
 }

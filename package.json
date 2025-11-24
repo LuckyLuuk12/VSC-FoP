@@ -10,7 +10,7 @@
   "description": "A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
@@ -47,10 +47,11 @@
   },
   "devDependencies": {
     "@types/node": "^18.x",
-    "@types/vscode": "^1.75.0",
+    "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.40.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.3.0",
+    "ts-node": "10.9.2"
   }
 }

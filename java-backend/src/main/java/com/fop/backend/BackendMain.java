@@ -1,16 +1,33 @@
 package com.fop.backend;
 
 public class BackendMain {
+
     public static void main(String[] args) {
-        // Scaffold only - no logic
-        System.out.println("FOP Backend started");
-    }
+        if (args.length == 0) {
+            System.out.println("No command given.");
+            return;
+        }
 
-    public void loadModel(String modelPath) {
-        // Scaffold only - no logic
-    }
+        String command = args[0];
 
-    public void buildVariant(String variantConfig) {
-        // Scaffold only - no logic
+        switch (command) {
+            case "loadModel":
+                if (args.length < 2) {
+                    System.out.println("Missing model path.");
+                    return;
+                }
+                String modelPath = args[1];
+                String modelJson = ModelLoader.loadModel(modelPath);
+                System.out.println(modelJson);
+                break;
+
+            case "buildVariant":
+                String result = FeatureHouseInvoker.buildVariant();
+                System.out.println(result);
+                break;
+
+            default:
+                System.out.println("Unknown command: " + command);
+        }
     }
 }

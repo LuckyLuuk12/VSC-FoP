@@ -1,26 +1,18 @@
-import { spawn, ChildProcess } from 'child_process';
+import { spawn } from "child_process";
 
 export class JavaBridge {
-    private javaProcess: ChildProcess | null = null;
+    constructor(private jarPath: string) {}
 
-    constructor() {
-        // Scaffold only - no logic
-    }
+    call(args: string[]): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const proc = spawn("java", ["-jar", this.jarPath, ...args]);
 
-    async loadModel(modelPath: string): Promise<void> {
-        // Scaffold only - no logic
-    }
+            let output = "";
+            proc.stdout.on("data", (d: any) => output += d.toString());
+            proc.stderr.on("data", (d: any) => console.error("[JAVA]", d.toString()));
 
-    async buildVariant(variantConfig: string): Promise<void> {
-        // Scaffold only - no logic
-    }
-
-    private executeJavaCommand(command: string, args: string[]): Promise<string> {
-        // Scaffold only - no logic
-        return Promise.resolve('');
-    }
-
-    dispose(): void {
-        // Scaffold only - no logic
+            proc.on("error", reject);
+            proc.on("close", () => resolve(output.trim()));
+        });
     }
 }
