@@ -1,7 +1,7 @@
 {
   "name": "fop-vscode-extension",
   "displayName": "Feature-Oriented Programming",
-  "description": "A VS Code extension to bring FeatureIDE's Feature-Orientated-Programming paradigm to a modern IDE",
+  "description": "A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.75.0"

@@ -1,6 +1,6 @@
 # VSC-FoP (Feature-Oriented Programming for VS Code)
 
-A VS Code extension to bring FeatureIDE's Feature-Orientated-Programming paradigm to a modern IDE.
+A VS Code extension to bring FeatureIDE's Feature-Oriented-Programming paradigm to a modern IDE.
 
 ## Overview
 
