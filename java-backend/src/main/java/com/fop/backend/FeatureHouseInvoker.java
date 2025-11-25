@@ -6,6 +6,11 @@ public class FeatureHouseInvoker {
 
     public static String buildVariant(String configFile) {
         // TODO: parse config file and make a .feature file
+        //      just xml parsing, order of composition top to bot
+        // TODO: redirect output folder 
+        //      make base-dir point towards project while parsed
+        //      config file is generated where the files will be generated
+        //      then call FH with base-dir and the generated .feature file
         // TODO: return the output folder path
         
         String line;
