@@ -1,11 +1,3 @@
-# Setup
-
-FSTMerge uses "merge" which is included in the rcs toolchain
-
-```
-sudo apt install rcs
-```
-
 # Run
 
 ```
@@ -14,12 +6,10 @@ sudo apt install rcs
 
 # Example
 
+Change "Graph/GraphComp.features" to include/exclude features
+
 ```
-./gradlew run --args="buildVariant TESTPROJ_Stack/Stack.features"
+./gradlew run --args="buildVariant test/Graph/GraphComp.features"
 ```
 
-The resulting merged program is located at: 
-```
-TESTPROJ_Stack/Stack/Stack.java.merge
-TESTPROJ_Stack/Stack/Test.java.merge
-```
+The resulting program will be put in "test/Graph/GraphComp/Graph/"

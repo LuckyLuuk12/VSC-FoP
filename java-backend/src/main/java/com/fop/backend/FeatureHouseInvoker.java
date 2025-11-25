@@ -5,17 +5,16 @@ import java.io.*;
 public class FeatureHouseInvoker {
 
     public static String buildVariant(String configFile) {
-        // TODO: call FeatureHouse/AHEAD toolchain
-        // TODO: execute composition and return the output folder path
+        // TODO: parse config file and make a .feature file
+        // TODO: return the output folder path
         
         String line;
         Process process;
         int exitCode;
 
         ProcessBuilder pb = new ProcessBuilder(
-            "java", "-cp", 
+            "java", "-jar", 
             "./lib/FeatureHouse.jar", 
-            "merger.FSTGenMerger", 
             "--expression", configFile
             //,"--base-dir", baseDir
         );

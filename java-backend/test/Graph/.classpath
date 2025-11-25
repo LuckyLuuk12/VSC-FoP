@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="BasicGraph"/>
+	<classpathentry kind="src" path="Color"/>
+	<classpathentry kind="src" path="GraphComp"/>
+	<classpathentry kind="src" path="PrintHeader"/>
+	<classpathentry kind="src" path="Recursive"/>
+	<classpathentry kind="src" path="Weight"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
