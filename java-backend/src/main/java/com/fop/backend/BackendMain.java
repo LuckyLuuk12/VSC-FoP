@@ -33,7 +33,12 @@ public class BackendMain {
                 break;
 
             case "buildVariant":
-                String result = FeatureHouseInvoker.buildVariant();
+                if (args.length < 2) {
+                    System.out.println("Missing config file");
+                    return;
+                }
+                String configFile = args[1];
+                String result = FeatureHouseInvoker.buildVariant(configFile);
                 System.out.println(result);
                 break;
 
