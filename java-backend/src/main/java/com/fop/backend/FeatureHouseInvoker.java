@@ -19,11 +19,16 @@ public class FeatureHouseInvoker {
         String line;
         Process process;
         int exitCode;
+        String featureFile = "../test-configs/test.features";
+        ConfigHandler ch = new ConfigHandler();
+        String out = ch.makeFeatureFileFromConfig(configFile, featureFile);
+        System.out.println(out);
 
+        //Right now this does not do anything as the baseDir does not point towards assignment-6, will fix shortly
         ProcessBuilder pb = new ProcessBuilder(
             "java", "-jar", 
             "./lib/FeatureHouse.jar", 
-            "--expression", configFile
+            "--expression", featureFile
             //,"--base-dir", baseDir
         );
 
