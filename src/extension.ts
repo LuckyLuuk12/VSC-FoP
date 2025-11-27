@@ -6,6 +6,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export async function activate(context: vscode.ExtensionContext) {
+    let currentModelPath: string | undefined;
+
     //  Workspace validation 
     const workspace = vscode.workspace.workspaceFolders?.[0];
     if (!workspace) {
@@ -59,6 +61,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const modelData = await javaBridge.loadModel(modelPath);
             
             if (modelData.status === "ok") {
+                currentModelPath = modelPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, modelPath);
                 treeVisualization.show();
@@ -92,6 +95,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const modelData = await javaBridge.loadModel(file[0].fsPath);
             
             if (modelData.status === "ok") {
+                currentModelPath = file[0].fsPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, file[0].fsPath);
                 vscode.window.showInformationMessage("Model loaded successfully.");
@@ -104,9 +108,25 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const refreshModel = vscode.commands.registerCommand("fop.refreshModel", async () => {
-        const loaded = await detectAndLoadModel();
-        if (!loaded) {
-            vscode.window.showWarningMessage("No model.xml found in workspace. Use 'Load Feature Model' to select manually.");
+        if (currentModelPath) {
+            try {
+                const modelData = await javaBridge.loadModel(currentModelPath);
+
+                if (modelData.status === "ok") {
+                    featureTreeProvider.setModel(modelData);
+                    treeVisualization.setModel(modelData, currentModelPath);
+                    vscode.window.showInformationMessage("Model reloaded successfully.");
+                } else {
+                    vscode.window.showErrorMessage(`Failed to reload model: ${modelData.message}`);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`Error reloading model: ${error}`);
+            }
+        } else {
+            const loaded = await detectAndLoadModel();
+            if (!loaded) {
+                vscode.window.showWarningMessage("No model.xml found in workspace. Use 'Load Feature Model' to select manually.");
+            }
         }
     });
 
