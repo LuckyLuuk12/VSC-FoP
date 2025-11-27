@@ -1,15 +1,15 @@
 # Run
 
 ```
-./gradlew run --args="buildVariant <configFile>"
+./gradlew run --args="buildVariant <configFile> <featureFolder> <outputPath>"
 ```
 
-# Example
+# Example Run
 
-Change "Graph/GraphComp.features" to include/exclude features
+Output path does not work yet, so example usage would be:
 
 ```
-./gradlew run --args="buildVariant test/Graph/GraphComp.features"
+./gradlew run --args="buildVariant ../test-configs/auth-cli.xml ../test-features ."
 ```
 
-The resulting program will be put in "test/Graph/GraphComp/Graph/"
+The resulting program will be put in "test-features/tmp"

@@ -1,46 +1,49 @@
 package com.fop.backend;
 
 import java.io.*;
+import java.nio.file.*;
 
 public class FeatureHouseInvoker {
 
-    public static String buildVariant(String configFile) {
-        // TODO: parse config file and make a .feature file
-        //      just xml parsing, order of composition top to bot generate the 
-        //      .feature file in the folder we want the composed code to live.
-        // TODO: redirect output folder 
-        //      make base-dir point towards the folder with the features
-        //      then call FH with base-dir and the generated .feature file
-        //      this should generate the folder named A with the generated code
-        //      when given A.feature
-        // TODO: return the output folder path
-        //      (I think this is to display it to the user)
+    public static String buildVariant(
+            String configFilePath, 
+            String featuresFolderPath, 
+            String outputFolderPath) {
+        // TODO: Work on output folder: we need to move the directory that is created in the featuresFolderPath to the specified outputFolderPath
         
-        String line;
-        Process process;
-        int exitCode;
-        String featureFile = "../test-configs/test.features";
-        ConfigHandler ch = new ConfigHandler();
-        String out = ch.makeFeatureFileFromConfig(configFile, featureFile);
-        System.out.println(out);
+        
+        if (!featuresFolderPath.endsWith("/")) {
+            featuresFolderPath = featuresFolderPath + "/";
+        }
 
-        //Right now this does not do anything as the baseDir does not point towards assignment-6, will fix shortly
+        // Can change name of output folder by changing output here:
+        String tmpFilePath = featuresFolderPath + "tmp.features";
+        //String tmpFolderPath = featuresFolderPath + "tmp";
+
+        ConfigHandler ch = new ConfigHandler();
+        try {
+            String out = ch.makeFeatureFileFromConfig(
+                    configFilePath, tmpFilePath);
+        } catch (Exception e) {
+            return "Error making the feature file:\n" + e;
+        }
+
         ProcessBuilder pb = new ProcessBuilder(
             "java", "-jar", 
             "./lib/FeatureHouse.jar", 
-            "--expression", featureFile
-            //,"--base-dir", baseDir
+            "--expression", tmpFilePath,
+            "--base-directory", featuresFolderPath
         );
 
         pb.redirectErrorStream(true); // merge stdout & stderr
-        
+        Process process;
         try {
             process = pb.start();
             // Read output
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream())
             );
-        
+            String line; 
             while ((line = reader.readLine()) != null) {
                 System.out.println(line);
             }
@@ -52,17 +55,18 @@ public class FeatureHouseInvoker {
 
 
         try {
-            exitCode = process.waitFor();
-            switch (exitCode) {
+            switch (process.waitFor()) {
                 case 0:
-                    return "FH_SUCCESS";
+                    //moveFolder(tmpFolderPath, outputFolderPath);
+                    return "Built Variant Succesfully";
                 case 1:
                     return "FH_FAILURE";
                 default:
-                    return "FH_UNKNOWN_ERRCODE: " + exitCode;
+                    return "FH_UNKNOWN_ERRCODE";
             }
-        } catch (InterruptedException e) { 
-            return "FH_INTERRUPTED";
+        } catch (Exception e) { 
+            return "FH_INTERRUPTED:" + e;
         }
     }
+
 }
