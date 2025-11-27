@@ -9,16 +9,13 @@ public class FeatureHouseInvoker {
             String configFilePath, 
             String featuresFolderPath, 
             String outputFolderPath) {
-        // TODO: Work on output folder: we need to move the directory that is created in the featuresFolderPath to the specified outputFolderPath
-        
         
         if (!featuresFolderPath.endsWith("/")) {
             featuresFolderPath = featuresFolderPath + "/";
         }
 
-        // Can change name of output folder by changing output here:
-        String tmpFilePath = featuresFolderPath + "tmp.features";
-        //String tmpFolderPath = featuresFolderPath + "tmp";
+        String tmpFilePath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f.features";
+        String tmpFolderPath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f";
 
         ConfigHandler ch = new ConfigHandler();
         try {
@@ -49,7 +46,6 @@ public class FeatureHouseInvoker {
             }
 
         } catch (IOException e) {
-            //TODO catch
             return "FH_IO_ERROR:" + e;
         }                            
 
@@ -57,7 +53,8 @@ public class FeatureHouseInvoker {
         try {
             switch (process.waitFor()) {
                 case 0:
-                    //moveFolder(tmpFolderPath, outputFolderPath);
+                    deleteFile(tmpFilePath);
+                    moveFolder(tmpFolderPath, outputFolderPath);
                     return "Built Variant Succesfully";
                 case 1:
                     return "FH_FAILURE";
@@ -66,6 +63,48 @@ public class FeatureHouseInvoker {
             }
         } catch (Exception e) { 
             return "FH_INTERRUPTED:" + e;
+        }
+    }
+
+    private static void deleteFile(String filePath) {
+        try {
+            Path path = Paths.get(filePath).toAbsolutePath();
+            Files.delete(path);  
+
+            System.out.println("removed: " + path);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+    }
+
+    private static void moveFolder(String sourcePath, String targetPath) {
+        try {
+            Path sourceDir = Paths.get(sourcePath).toAbsolutePath();
+            Path targetDir = Paths.get(targetPath).toAbsolutePath();
+            
+            if (!Files.exists(targetDir)) {
+                Files.createDirectories(targetDir);
+            }
+
+            try (var stream = Files.list(sourceDir)) {
+                stream.forEach(src -> {
+                    try {
+                        Files.move(
+                            src,
+                            targetDir.resolve(src.getFileName()),
+                            StandardCopyOption.REPLACE_EXISTING
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            Files.delete(sourceDir);
+
+            System.out.println(sourcePath + " -> " + targetPath);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
