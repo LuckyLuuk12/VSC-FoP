@@ -36,6 +36,16 @@
       {
         "command": "fop.buildVariant",
         "title": "FOP: Build Variant"
+      },
+      {
+        "command": "fop.openConfigInConfigurator",
+        "title": "FOP: Open Config in Configurator",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "fop.createNewConfig",
+        "title": "FOP: Create New Config",
+        "icon": "$(add)"
       }
     ],
     "menus": {
@@ -49,6 +59,23 @@
           "command": "fop.showTreeVisualization",
           "when": "view == featureTreeView",
           "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "fop.openConfigInConfigurator",
+          "when": "resourceExtname == .xml",
+          "group": "fop@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fop.openConfigInConfigurator",
+          "when": "true"
+        },
+        {
+          "command": "fop.createNewConfig",
+          "when": "true"
         }
       ]
     },
