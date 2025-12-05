@@ -2,10 +2,13 @@ import * as vscode from 'vscode';
 import { FeatureTreeProvider } from './FeatureTreeProvider';
 import { FeatureTreeVisualization } from './FeatureTreeVisualization';
 import { JavaBridge } from './JavaBridge';
+import { ConfiguratorBuilder } from './ConfiguratorBuilder';
 import * as path from 'path';
 import * as fs from 'fs';
 
 export async function activate(context: vscode.ExtensionContext) {
+    let currentModelPath: string | undefined;
+
     //  Workspace validation 
     const workspace = vscode.workspace.workspaceFolders?.[0];
     if (!workspace) {
@@ -36,6 +39,9 @@ export async function activate(context: vscode.ExtensionContext) {
     
     //  Tree visualization webview
     const treeVisualization = new FeatureTreeVisualization(context.extensionPath, javaBridge);
+    
+    //  Configurator builder
+    const configuratorBuilder = new ConfiguratorBuilder(context.extensionPath);
 
     // Helper function to detect and load FOP model
     async function detectAndLoadModel(): Promise<boolean> {
@@ -59,8 +65,10 @@ export async function activate(context: vscode.ExtensionContext) {
             const modelData = await javaBridge.loadModel(modelPath);
             
             if (modelData.status === "ok") {
+                currentModelPath = modelPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, modelPath);
+                configuratorBuilder.setModel(modelData);
                 treeVisualization.show();
                 vscode.window.showInformationMessage(`FOP model loaded from ${path.basename(path.dirname(modelPath))}`);
                 return true;
@@ -92,8 +100,10 @@ export async function activate(context: vscode.ExtensionContext) {
             const modelData = await javaBridge.loadModel(file[0].fsPath);
             
             if (modelData.status === "ok") {
+                currentModelPath = file[0].fsPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, file[0].fsPath);
+                configuratorBuilder.setModel(modelData);
                 vscode.window.showInformationMessage("Model loaded successfully.");
             } else {
                 vscode.window.showErrorMessage(`Failed to load model: ${modelData.message}`);
@@ -104,9 +114,26 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const refreshModel = vscode.commands.registerCommand("fop.refreshModel", async () => {
-        const loaded = await detectAndLoadModel();
-        if (!loaded) {
-            vscode.window.showWarningMessage("No model.xml found in workspace. Use 'Load Feature Model' to select manually.");
+        if (currentModelPath) {
+            try {
+                const modelData = await javaBridge.loadModel(currentModelPath);
+
+                if (modelData.status === "ok") {
+                    featureTreeProvider.setModel(modelData);
+                    treeVisualization.setModel(modelData, currentModelPath);
+                    configuratorBuilder.setModel(modelData);
+                    vscode.window.showInformationMessage("Model reloaded successfully.");
+                } else {
+                    vscode.window.showErrorMessage(`Failed to reload model: ${modelData.message}`);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`Error reloading model: ${error}`);
+            }
+        } else {
+            const loaded = await detectAndLoadModel();
+            if (!loaded) {
+                vscode.window.showWarningMessage("No model.xml found in workspace. Use 'Load Feature Model' to select manually.");
+            }
         }
     });
 
@@ -119,7 +146,35 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("Variant built:\n" + result);
     });
 
-    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant);
+    const openConfigInConfigurator = vscode.commands.registerCommand("fop.openConfigInConfigurator", async (uri?: vscode.Uri) => {
+        let configPath: string | undefined;
+        
+        if (uri) {
+            // Called from context menu
+            configPath = uri.fsPath;
+        } else {
+            // Called from command palette
+            const file = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                filters: { 'XML Files': ['xml'] },
+                title: "Select Configuration File"
+            });
+            if (file && file.length > 0) {
+                configPath = file[0].fsPath;
+            }
+        }
+        
+        if (configPath) {
+            await configuratorBuilder.openConfig(configPath);
+        }
+    });
+
+    const createNewConfig = vscode.commands.registerCommand("fop.createNewConfig", async () => {
+        await configuratorBuilder.openConfig();
+    });
+
+    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant, openConfigInConfigurator, createNewConfig);
 }
 
 export function deactivate() {}

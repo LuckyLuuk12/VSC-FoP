@@ -16,6 +16,7 @@ This extension provides Feature-Oriented Programming (FOP) capabilities in Visua
 - **Load Model Command**: Manually load FeatureIDE XML feature models from any location
 - **Refresh Model Command**: Reload the current feature model (available in the Feature Model tree view toolbar)
 - **Build Variant Command**: Build specific product variants based on feature configurations
+- **Configuration Builder**: Graphical interface to create and edit feature configurations with real-time constraint validation
 
 ## Architecture
 
@@ -47,6 +48,7 @@ npm run compile
 cd java-backend
 # Download Gradle wrapper jar
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
+Invoke-WebRequest -Uri "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar" -OutFile "lib\FeatureHouse.jar" 
 # Build the project
 .\gradlew.bat build
 ```
@@ -55,6 +57,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/g
 ```bash
 cd java-backend
 wget -O ./gradle/wrapper/gradle-wrapper.jar "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
+wget -O lib/FeatureHouse.jar "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar"
 ./gradlew build
 ```
 
@@ -77,6 +80,23 @@ The extension automatically detects FOP projects by looking for `model.xml` file
 
 ### Refreshing the Model
 Click the refresh icon in the Feature Model tree view toolbar or run `FOP: Refresh Model` from the Command Palette to reload the model.
+
+### Configuration Builder
+The extension includes a graphical Configuration Builder to manage feature selections easily.
+
+**Key Features:**
+- **Visual Selection**: Interactive checkboxes for feature selection
+- **Constraint Validation**: Automatically handles mandatory features and visualizes constraints (bold for mandatory, italic for abstract)
+- **Real-time Updates**: Live counter of selected features
+- **Integrated Build**: Trigger variant generation directly from the configuration panel
+
+**How to use:**
+1. **Create New Config**: Run `FOP: Create New Config` from the Command Palette.
+2. **Edit Existing Config**: Right-click any XML configuration file in the explorer and select `FOP: Open Config in Configurator`.
+3. **Panel Actions**:
+   - Use the panel on the right to select/deselect features.
+   - Click **Save Configuration** to save your selection to an XML file.
+   - Click **Build Variant** to generate the product variant based on current selection.
 
 ### Feature Model Format
 The extension supports FeatureIDE XML format with:
@@ -108,4 +128,6 @@ Example model structure:
 
 - `FOP: Load Model` - Manually load a feature model from any location
 - `FOP: Refresh Model` - Reload the feature model from workspace
-- `FOP: Build Variant` - Build a product variant (implementation in progress)
+- `FOP: Build Variant` - Build a product variant from a configuration
+- `FOP: Create New Config` - Open the configuration builder for a new configuration
+- `FOP: Open Config in Configurator` - Open an existing configuration file in the builder

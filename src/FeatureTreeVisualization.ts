@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
+// Helper for syntax highlighting
+const html = (strings: TemplateStringsArray, ...values: any[]) => 
+    strings.reduce((result, str, i) => result + str + (values[i] ?? ''), '');
+
 interface FeatureNode {
     name: string;
     type: string;
@@ -225,7 +229,7 @@ export class FeatureTreeVisualization {
     private getWebviewContent(): string {
         const modelJson = this.model ? JSON.stringify(this.model.root) : 'null';
         const hasModel = this.model !== null;
-        // @ts-ignore ignore the html tag error, this html allows syntax highlighting in vscode
+        
         return html`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -253,9 +257,9 @@ export class FeatureTreeVisualization {
 
         #zoom-controls {
             position: fixed;
-            top: 10px;
+            bottom: 10px;
             right: 10px;
-            z-index: 1000;
+            z-index: 500;
             display: flex;
             gap: 5px;
             background: var(--vscode-editor-background);
