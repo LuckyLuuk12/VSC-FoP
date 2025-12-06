@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import * as fs from "fs";
+import { SubTreePreprocessor } from "./SubTreePreprocessor";
 
 export class JavaBridge {
     constructor(private jarPath: string) {
@@ -48,24 +49,13 @@ export class JavaBridge {
         });
     }
 
-    async loadModel(modelPath: string): Promise<any> {
-        console.log(`[JavaBridge] Loading model from: ${modelPath}`);
-        
-        if (!fs.existsSync(modelPath)) {
-            throw new Error(`Model file not found: ${modelPath}`);
-        }
-        
-        const result = await this.call(["loadModel", modelPath]);
-        
-        if (!result || result.trim().length === 0) {
-            throw new Error("Java backend returned empty response");
-        }
-        
-        try {
-            return JSON.parse(result);
-        } catch (error) {
-            console.error(`[JavaBridge] Failed to parse JSON. Raw output: ${result}`);
-            throw new Error(`Failed to parse model data: ${error}. Raw output: ${result}`);
-        }
-    }
+async loadModel(modelPath: string): Promise<any> {
+    const preprocessor = new SubTreePreprocessor();
+    const processedXML = await preprocessor.preprocess(modelPath);
+
+    const tempPath = modelPath + ".merged.xml";
+    fs.writeFileSync(tempPath, processedXML, "utf8");
+
+    return await this.call(["loadModel", tempPath]);
+}
 }
