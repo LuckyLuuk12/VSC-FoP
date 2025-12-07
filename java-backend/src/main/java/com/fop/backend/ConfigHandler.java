@@ -8,18 +8,16 @@ import java.util.List;
 
 public class ConfigHandler {
 
-    public static String makeFeatureFileFromConfig(String configPath, String outputPath) throws Exception {
-        File xmlFile = new File(configPath);
-        List<String> selectedFeatures = getByAttribute(xmlFile,"selected");
+    public static String makeFeatureFileFromConfig(File configPath, File outputPath) throws Exception {
+        List<String> selectedFeatures = getByAttribute(configPath,"selected");
 
-        File outputFile = new File(outputPath);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath));
         for (String feature : selectedFeatures) {
             writer.write(feature);
             writer.newLine();
         }
         writer.close();
-        return "Selected features written to: " + outputFile.getAbsolutePath();
+        return "Selected features written to: " + outputPath.getAbsolutePath();
     }
 
     // Get the names of each "feature" which has an attribute with the value "match" 

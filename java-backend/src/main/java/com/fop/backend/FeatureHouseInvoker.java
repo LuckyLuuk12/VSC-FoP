@@ -9,18 +9,27 @@ public class FeatureHouseInvoker {
             String configFilePath, 
             String featuresFolderPath, 
             String outputFolderPath) {
-        
-        if (!featuresFolderPath.endsWith("/")) {
-            featuresFolderPath = featuresFolderPath + "/";
+        File configFile     = new File(configFilePath);
+        File featuresFolder = new File(featuresFolderPath);
+        File outputFolder   = new File(outputFolderPath);
+
+        if(!configFile.exists()) {
+            return "Cannot find config file";
         }
 
-        String tmpFilePath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f.features";
-        String tmpFolderPath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f";
+        if(!featuresFolder.isDirectory()) {
+            return "Cannot find features folder";
+        }
+        
+
+        String tmpFilePath = featuresFolderPath + "/tmp_58131bc547fb87af94cebdaf3102321f.features";
+        File tmpFile = new File(tmpFilePath);
+        String tmpFolderPath = featuresFolderPath + "/tmp_58131bc547fb87af94cebdaf3102321f";
 
         ConfigHandler ch = new ConfigHandler();
         try {
             String out = ch.makeFeatureFileFromConfig(
-                    configFilePath, tmpFilePath);
+                    configFile, tmpFile);
         } catch (Exception e) {
             return "Error making the feature file:\n" + e;
         }
@@ -53,59 +62,44 @@ public class FeatureHouseInvoker {
         try {
             switch (process.waitFor()) {
                 case 0:
-                    deleteFile(tmpFilePath);
+                    tmpFile.delete();
                     moveFolder(tmpFolderPath, outputFolderPath);
                     return "Built Variant Succesfully";
                 case 1:
-                    return "FH_FAILURE";
+                    return "Feature House failed with error code 1.";
                 default:
                     return "FH_UNKNOWN_ERRCODE";
             }
         } catch (Exception e) { 
-            return "FH_INTERRUPTED:" + e;
+            return "Feature House was interrupted:" + e;
         }
     }
 
-    private static void deleteFile(String filePath) {
-        try {
-            Path path = Paths.get(filePath).toAbsolutePath();
-            Files.delete(path);  
-
-            System.out.println("removed: " + path);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-    }
-
-    private static void moveFolder(String sourcePath, String targetPath) {
-        try {
-            Path sourceDir = Paths.get(sourcePath).toAbsolutePath();
-            Path targetDir = Paths.get(targetPath).toAbsolutePath();
-            
-            if (!Files.exists(targetDir)) {
-                Files.createDirectories(targetDir);
-            }
-
-            try (var stream = Files.list(sourceDir)) {
-                stream.forEach(src -> {
-                    try {
-                        Files.move(
-                            src,
-                            targetDir.resolve(src.getFileName()),
-                            StandardCopyOption.REPLACE_EXISTING
-                        );
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-
-            Files.delete(sourceDir);
-
-            System.out.println(sourcePath + " -> " + targetPath);
-        } catch (Exception e) {
-            e.printStackTrace();
+    private static void moveFolder(String sourcePath, String targetPath) throws Exception {
+        Path sourceDir = Paths.get(sourcePath).toAbsolutePath();
+        Path targetDir = Paths.get(targetPath).toAbsolutePath();
+        
+        if (!Files.exists(targetDir)) {
+            Files.createDirectories(targetDir);
         }
+
+        try (var stream = Files.list(sourceDir)) {
+            stream.forEach(src -> {
+                try {
+                    Files.move(
+                        src,
+                        targetDir.resolve(src.getFileName()),
+                        StandardCopyOption.REPLACE_EXISTING
+                    );
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        Files.delete(sourceDir);
+
+        System.out.println(sourcePath + " -> " + targetPath);
     }
 
 }
