@@ -22,7 +22,7 @@ public class FeatureHouseInvoker {
             String out = ch.makeFeatureFileFromConfig(
                     configFilePath, tmpFilePath);
         } catch (Exception e) {
-            return "Error making the feature file:\n" + e;
+            return "Error creating feature file from configuration: " + e.getMessage();
         }
 
         ProcessBuilder pb = new ProcessBuilder(
@@ -37,14 +37,14 @@ public class FeatureHouseInvoker {
         try {
             process = pb.start();
             // Read output
-            BufferedReader reader = new BufferedReader(
+            try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream())
-            );
-            String line; 
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+            )) {
+                String line; 
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
             }
-
         } catch (IOException e) {
             return "FH_IO_ERROR:" + e;
         }                            
@@ -55,7 +55,7 @@ public class FeatureHouseInvoker {
                 case 0:
                     deleteFile(tmpFilePath);
                     moveFolder(tmpFolderPath, outputFolderPath);
-                    return "Built Variant Succesfully";
+                    return "Built Variant Successfully";
                 case 1:
                     return "FH_FAILURE";
                 default:

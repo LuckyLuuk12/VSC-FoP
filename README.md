@@ -86,8 +86,8 @@ The extension includes a graphical Configuration Builder to manage feature selec
 
 **Key Features:**
 - **Visual Selection**: Interactive checkboxes for feature selection
-- **Constraint Validation**: Automatically handles mandatory features and visualizes constraints (bold for mandatory, italic for abstract)
-- **Real-time Updates**: Live counter of selected features
+- **Constraint Validation**: Automatically handles mandatory features and visualizes constraints (colored badges: red for mandatory, blue for abstract)
+- **Real-time Updates**: Live counter of possible configurations
 - **Integrated Build**: Trigger variant generation directly from the configuration panel
 
 **How to use:**
@@ -96,7 +96,7 @@ The extension includes a graphical Configuration Builder to manage feature selec
 3. **Panel Actions**:
    - Use the panel on the right to select/deselect features.
    - Click **Save Configuration** to save your selection to an XML file.
-   - Click **Build Variant** to generate the product variant based on current selection.
+   - After saving your configuration, use the `FOP: Build Variant` command to generate the product variant based on your current selection.
 
 ### Feature Model Format
 The extension supports FeatureIDE XML format with:
