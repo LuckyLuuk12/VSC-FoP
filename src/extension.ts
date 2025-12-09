@@ -164,8 +164,9 @@ export async function activate(context: vscode.ExtensionContext) {
         const outputFolder = outfolder[0].fsPath;
 
         try {
+            console.log(`building model: ${currentModelPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}` );
             const result = await javaBridge.call(["buildVariant", currentModelPath, featureFolder, outputFolder]);
-            vscode.window.showInformationMessage("Variant built:\n" + result);
+            vscode.window.showInformationMessage("Backend result:\n" + result);
         } catch (error) {
             vscode.window.showErrorMessage(`Error building variant: ${error}`);
         }
