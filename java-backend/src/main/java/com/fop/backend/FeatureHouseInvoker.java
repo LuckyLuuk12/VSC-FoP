@@ -34,6 +34,8 @@ public class FeatureHouseInvoker {
             return "Error making the feature file:\n" + e;
         }
 
+        Path test = Paths.get("../java-backend/lib/FeatureHouse.jar");
+        System.out.println(test.toAbsolutePath());
         ProcessBuilder pb = new ProcessBuilder(
             "java", "-jar", 
             "../java-backend/lib/FeatureHouse.jar", 
