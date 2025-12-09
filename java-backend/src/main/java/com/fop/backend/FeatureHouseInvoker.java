@@ -36,7 +36,7 @@ public class FeatureHouseInvoker {
 
         ProcessBuilder pb = new ProcessBuilder(
             "java", "-jar", 
-            "./lib/FeatureHouse.jar", 
+            "./java-backend/lib/FeatureHouse.jar", 
             "--expression", tmpFilePath,
             "--base-directory", featuresFolderPath
         );
