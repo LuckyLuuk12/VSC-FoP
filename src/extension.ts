@@ -135,8 +135,40 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const buildVariant = vscode.commands.registerCommand("fop.buildVariant", async () => {
-        const result = await javaBridge.call(["buildVariant"]);
-        vscode.window.showInformationMessage("Variant built:\n" + result);
+        
+        if (!currentModelPath) {
+            const file = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                filters: { XML: ["xml"], JSON: ["json"] },
+                title: "Select Feature Model"
+            });
+            if (!file) return;
+            currentModelPath = file[0].fsPath;
+        }
+
+        const featfolder = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            title: "Select Features Folder"
+        });
+        if (!featfolder) return;
+        const featureFolder = featfolder[0].fsPath;
+
+        const outfolder = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            title: "Select Output Folder"
+        });
+        if (!outfolder) return;
+        const outputFolder = outfolder[0].fsPath;
+
+        try {
+            const result = await javaBridge.call(["buildVariant", currentModelPath, featureFolder, outputFolder]);
+            vscode.window.showInformationMessage("Variant built:\n" + result);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error building variant: ${error}`);
+        }
     });
 
     context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant);
