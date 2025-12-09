@@ -33,17 +33,18 @@ public class BackendMain {
                 break;
 
             case "buildVariant":
-                if (args.length < 3) {
+                if (args.length < 5) {
                     System.out.println(
-                            "usage: buildVariant " + 
-                            "<configFile> <featuresFolder> <outputFolder>");
+                            "usage: buildVariant " +
+                                    "<configFile> <featuresFolder> <outputFolder> <tempDir>");
                     return;
                 }
                 String configFilePath = args[1];
                 String featuresFolderPath = args[2];
                 String outputFolderPath = args[3];
+                String tempDirPath = args[4];
                 String result = FeatureHouseInvoker.buildVariant(
-                        configFilePath, featuresFolderPath, outputFolderPath);
+                        configFilePath, featuresFolderPath, outputFolderPath, tempDirPath);
                 System.out.println(result);
                 break;
 

@@ -34,13 +34,16 @@ The extension consists of two main components:
 
 ## Building
 
-### TypeScript Extension
+
 ```bash
 npm install
-npm run compile
+npm run build
 ```
 
 ### Java Backend
+
+> [!CAUTION]
+> `npm run build` now ensures all dependencies are installed and everything gets compiled. No need for any of the commands below:
 
 **First time setup (Windows):**
 ```bash

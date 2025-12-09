@@ -6,25 +6,38 @@ import java.nio.file.*;
 public class FeatureHouseInvoker {
 
     public static String buildVariant(
-            String configFilePath, 
-            String featuresFolderPath, 
-            String outputFolderPath) {
-        File configFile     = new File(configFilePath);
+            String configFilePath,
+            String featuresFolderPath,
+            String outputFolderPath,
+            String tempDirPath) {
+        File configFile = new File(configFilePath);
         File featuresFolder = new File(featuresFolderPath);
-        File outputFolder   = new File(outputFolderPath);
+        File outputFolder = new File(outputFolderPath);
+        File tempDir = new File(tempDirPath);
 
-        if(!configFile.exists()) {
+        if (!configFile.exists()) {
             return "Cannot find config file";
         }
 
-        if(!featuresFolder.isDirectory()) {
+        if (!featuresFolder.isDirectory()) {
             return "Cannot find features folder";
         }
-        
 
-        String tmpFilePath = featuresFolderPath + "/tmp_58131bc547fb87af94cebdaf3102321f.features";
+        // Ensure temp directory exists
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+            System.out.println("Created temp directory: " + tempDirPath);
+        }
+
+        // Generate unique temporary folder name with timestamp-based UUID
+        String tmpUuid = System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
+        String tmpFilePath = tempDirPath + File.separator + tmpUuid + ".features";
         File tmpFile = new File(tmpFilePath);
-        String tmpFolderPath = featuresFolderPath + "/tmp_58131bc547fb87af94cebdaf3102321f";
+        String tmpFolderPath = tempDirPath + File.separator + tmpUuid;
+
+        System.out.println("Temp directory: " + tempDirPath);
+        System.out.println("Temp file path: " + tmpFilePath);
+        System.out.println("Temp folder path: " + tmpFolderPath);
 
         ConfigHandler ch = new ConfigHandler();
         try {
@@ -34,74 +47,155 @@ public class FeatureHouseInvoker {
             return "Error making the feature file:\n" + e;
         }
 
-        Path test = Paths.get("../java-backend/lib/FeatureHouse.jar");
-        System.out.println(test.toAbsolutePath());
-        ProcessBuilder pb = new ProcessBuilder(
-            "java", "-jar", 
-            "../java-backend/lib/FeatureHouse.jar", 
-            "--expression", tmpFilePath,
-            "--base-directory", featuresFolderPath
-        );
-
-        pb.redirectErrorStream(true); // merge stdout & stderr
-        Process process;
+        // Call FeatureHouse directly instead of spawning a process
         try {
-            process = pb.start();
-            // Read output
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream())
-            );
-            String line; 
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+            // Create the temporary output directory if it doesn't exist
+            File tmpFolder = new File(tmpFolderPath);
+            if (!tmpFolder.exists()) {
+                tmpFolder.mkdirs();
+                System.out.println("Created temporary output directory: " + tmpFolderPath);
             }
 
-        } catch (IOException e) {
-            return "FH_IO_ERROR:" + e;
-        }                            
+            String[] fhArgs = {
+                    "--expression", tmpFilePath,
+                    "--base-directory", featuresFolderPath
+            };
 
+            System.out.println("Calling FeatureHouse with args:");
+            System.out.println("  --expression: " + tmpFilePath);
+            System.out.println("  --base-directory: " + featuresFolderPath);
+            System.out.println("  Expected output directory: " + tmpFolderPath);
 
-        try {
-            switch (process.waitFor()) {
-                case 0:
-                    tmpFile.delete();
-                    moveFolder(tmpFolderPath, outputFolderPath);
-                    return "Built Variant Succesfully";
-                case 1:
-                    return "Feature House failed with error code 1.";
-                default:
-                    return "FH_UNKNOWN_ERRCODE";
+            // Invoke FeatureHouse main method
+            composer.FSTGenComposer.main(fhArgs);
+
+            // If we get here, FeatureHouse succeeded
+            System.out.println("FeatureHouse completed successfully");
+
+            // Check if tmp folder was created and has contents
+            File tmpFolderCheck = new File(tmpFolderPath);
+            if (tmpFolderCheck.exists()) {
+                System.out.println("Temp folder exists: " + tmpFolderPath);
+                File[] contents = tmpFolderCheck.listFiles();
+                if (contents != null) {
+                    System.out.println("Temp folder contains " + contents.length + " items:");
+                    for (File f : contents) {
+                        System.out.println("  - " + f.getName());
+                    }
+                } else {
+                    System.out.println("WARNING: Temp folder is empty or cannot be read");
+                }
+            } else {
+                System.out.println("WARNING: Temp folder does not exist: " + tmpFolderPath);
             }
-        } catch (Exception e) { 
-            return "Feature House was interrupted:" + e;
+
+            boolean tmpFileDeleted = tmpFile.delete();
+            System.out.println("Deleted temp .features file: " + tmpFileDeleted);
+
+            System.out.println("Starting move from " + tmpFolderPath + " to " + outputFolderPath);
+            moveFolder(tmpFolderPath, outputFolderPath);
+
+            return "Built Variant Successfully";
+
+        } catch (Exception e) {
+            // Print full stack trace for debugging
+            e.printStackTrace();
+
+            // Build detailed error message
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("FeatureHouse error: ").append(e.getClass().getName());
+            if (e.getMessage() != null) {
+                errorMsg.append("\nMessage: ").append(e.getMessage());
+            }
+            if (e.getCause() != null) {
+                errorMsg.append("\nCause: ").append(e.getCause().getMessage());
+            }
+            return errorMsg.toString();
         }
     }
 
     private static void moveFolder(String sourcePath, String targetPath) throws Exception {
         Path sourceDir = Paths.get(sourcePath).toAbsolutePath();
         Path targetDir = Paths.get(targetPath).toAbsolutePath();
-        
+
+        System.out.println("moveFolder called:");
+        System.out.println("  Source: " + sourceDir);
+        System.out.println("  Target: " + targetDir);
+        System.out.println("  Source exists: " + Files.exists(sourceDir));
+        System.out.println("  Target exists: " + Files.exists(targetDir));
+
         if (!Files.exists(targetDir)) {
+            System.out.println("Creating target directory...");
             Files.createDirectories(targetDir);
         }
 
+        // Give FeatureHouse time to release file handles (Windows file locking issue)
+        System.out.println("Waiting for file locks to release...");
+        Thread.sleep(500);
+
+        // Retry logic for Windows file locks
+        int maxRetries = 10;
+        int retryDelay = 200; // 200 milliseconds
+
         try (var stream = Files.list(sourceDir)) {
-            stream.forEach(src -> {
-                try {
-                    Files.move(
-                        src,
-                        targetDir.resolve(src.getFileName()),
-                        StandardCopyOption.REPLACE_EXISTING
-                    );
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            var files = stream.collect(java.util.stream.Collectors.toList());
+            System.out.println("Found " + files.size() + " files/folders to move");
+
+            if (files.isEmpty()) {
+                System.out.println("WARNING: No files found in source directory!");
+            }
+
+            for (Path src : files) {
+                boolean copied = false;
+                for (int attempt = 1; attempt <= maxRetries && !copied; attempt++) {
+                    try {
+                        Path dest = targetDir.resolve(src.getFileName());
+                        System.out.println("Attempting to copy: " + src + " -> " + dest);
+
+                        // Use copy instead of move - works better with file locks
+                        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                        copied = true;
+                        System.out.println("✓ Successfully copied: " + src.getFileName());
+                    } catch (IOException e) {
+                        if (attempt < maxRetries) {
+                            System.out.println("⚠ Retry " + attempt + "/" + maxRetries + " for " + src.getFileName()
+                                    + " (file locked: " + e.getMessage() + ")");
+                            Thread.sleep(retryDelay);
+                        } else {
+                            System.out.println(
+                                    "✗ FAILED to copy " + src.getFileName() + " after " + maxRetries + " attempts");
+                            throw new RuntimeException(
+                                    "Failed to copy " + src.getFileName() + " after " + maxRetries + " attempts", e);
+                        }
+                    }
                 }
-            });
+            }
         }
 
-        Files.delete(sourceDir);
+        // Clean up temporary files after copying
+        System.out.println("Cleaning up temporary files...");
+        try (var cleanupStream = Files.list(sourceDir)) {
+            var cleanupFiles = cleanupStream.collect(java.util.stream.Collectors.toList());
+            for (Path file : cleanupFiles) {
+                try {
+                    Files.deleteIfExists(file);
+                    System.out.println("✓ Deleted: " + file.getFileName());
+                } catch (IOException e) {
+                    System.out.println("⚠ Could not delete: " + file.getFileName() + " (" + e.getMessage() + ")");
+                }
+            }
+        }
 
-        System.out.println(sourcePath + " -> " + targetPath);
+        System.out.println("Attempting to delete source directory: " + sourceDir);
+        try {
+            Files.delete(sourceDir);
+            System.out.println("✓ Source directory deleted successfully");
+        } catch (IOException e) {
+            System.out.println("⚠ WARNING: Could not delete source directory: " + e.getMessage());
+            System.out.println("   You may need to manually delete: " + sourceDir);
+        }
+
+        System.out.println("✓ Successfully completed copying files from " + sourcePath + " to " + targetPath);
     }
 
 }
