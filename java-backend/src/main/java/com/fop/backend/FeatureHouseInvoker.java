@@ -1,19 +1,20 @@
 package com.fop.backend;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class FeatureHouseInvoker {
 
     public static String buildVariant(
             String configFilePath,
             String featuresFolderPath,
-            String outputFolderPath,
-            String tempDirPath) {
+            String outputFolderPath) {
         File configFile = new File(configFilePath);
         File featuresFolder = new File(featuresFolderPath);
-        File outputFolder = new File(outputFolderPath);
-        File tempDir = new File(tempDirPath);
 
         if (!configFile.exists()) {
             return "Cannot find config file";
@@ -23,25 +24,17 @@ public class FeatureHouseInvoker {
             return "Cannot find features folder";
         }
 
-        // Ensure temp directory exists
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-            System.out.println("Created temp directory: " + tempDirPath);
-        }
-
         // Generate unique temporary folder name with timestamp-based UUID
         String tmpUuid = System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
-        String tmpFilePath = tempDirPath + File.separator + tmpUuid + ".features";
+        String tmpFilePath = featuresFolderPath + File.separator + tmpUuid + ".features";
         File tmpFile = new File(tmpFilePath);
-        String tmpFolderPath = tempDirPath + File.separator + tmpUuid;
+        String tmpFolderPath = featuresFolderPath + File.separator + tmpUuid;
 
-        System.out.println("Temp directory: " + tempDirPath);
         System.out.println("Temp file path: " + tmpFilePath);
         System.out.println("Temp folder path: " + tmpFolderPath);
 
-        ConfigHandler ch = new ConfigHandler();
         try {
-            String out = ch.makeFeatureFileFromConfig(
+            ConfigHandler.makeFeatureFileFromConfig(
                     configFile, tmpFile);
         } catch (Exception e) {
             return "Error making the feature file:\n" + e;
@@ -98,9 +91,6 @@ public class FeatureHouseInvoker {
             return "Built Variant Successfully";
 
         } catch (Exception e) {
-            // Print full stack trace for debugging
-            e.printStackTrace();
-
             // Build detailed error message
             StringBuilder errorMsg = new StringBuilder();
             errorMsg.append("FeatureHouse error: ").append(e.getClass().getName());

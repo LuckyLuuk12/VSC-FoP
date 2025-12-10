@@ -180,12 +180,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // Create temp directory in workspace root
         const workspaceRoot = workspace!.uri.fsPath;
-        const tmpDir = path.join(workspaceRoot, '.tmp', 'featurehouse');
-
-        // Ensure temp directory exists
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
-        }
 
         // Update VS Code settings to exclude temp directory from Java project
         const vscodeDir = path.join(workspaceRoot, '.vscode');
@@ -220,8 +214,8 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            console.log(`building with config: ${configPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}\ntempDir: ${tmpDir}`);
-            const result = await javaBridge.call(["buildVariant", configPath, featureFolder, outputFolder, tmpDir]);
+            console.log(`building with config: ${configPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}`);
+            const result = await javaBridge.call(["buildVariant", configPath, featureFolder, outputFolder]);
             vscode.window.showInformationMessage("Backend result:\n" + result);
         } catch (error) {
             vscode.window.showErrorMessage(`Error building variant: ${error}`);
