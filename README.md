@@ -34,19 +34,23 @@ The extension consists of two main components:
 
 ## Building
 
-### TypeScript Extension
+
 ```bash
 npm install
-npm run compile
+npm run build
 ```
 
 ### Java Backend
+
+> [!CAUTION]
+> `npm run build` now ensures all dependencies are installed and everything gets compiled. No need for any of the commands below:
 
 **First time setup (Windows):**
 ```bash
 cd java-backend
 # Download Gradle wrapper jar
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
+Invoke-WebRequest -Uri "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar" -OutFile "lib\FeatureHouse.jar" 
 # Build the project
 .\gradlew.bat build
 ```
@@ -55,6 +59,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/g
 ```bash
 cd java-backend
 wget -O ./gradle/wrapper/gradle-wrapper.jar "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
+wget -O lib/FeatureHouse.jar "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar"
 ./gradlew build
 ```
 

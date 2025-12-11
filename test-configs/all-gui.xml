@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+	<feature automatic="selected" name="ChatApp"/>
+	<feature automatic="selected" name="Server"/>
+	<feature automatic="selected" name="Client"/>
+	<feature manual="selected" name="Logging"/>
+	<feature automatic="selected" name="UI"/>
+	<feature automatic="selected" manual="selected" name="GUI"/>
+	<feature manual="selected" name="FXColour"/>
+	<feature automatic="unselected" name="CLI"/>
+	<feature automatic="unselected" name="ANSIColour"/>
+	<feature automatic="selected" manual="selected" name="Encryption"/>
+	<feature manual="selected" name="RotateRightEncryption"/>
+	<feature manual="selected" name="CeasarEncryption"/>
+	<feature manual="selected" name="Authentication"/>
+	<feature manual="selected" name="MessageSound"/>
+</configuration>

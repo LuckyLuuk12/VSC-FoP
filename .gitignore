@@ -4,6 +4,7 @@ dist
 *.vsix
 .vscode-test/
 *.log
+.vscode
 
 # Java backend
 java-backend/build/
