@@ -19,7 +19,7 @@ export class SubTreePreprocessor {
         if (typeof node !== "object" || node === null) return;
 
         if (node.subtree && Array.isArray(node.subtree)) {
-            const expandedFeatures: any[] = [];
+            const expandedNodes: any[] = [];
 
             for (const subtree of node.subtree) {
                 const name = subtree.$.name;
@@ -37,11 +37,17 @@ export class SubTreePreprocessor {
                     throw new Error(`SubTree "${name}" has no <struct> section`);
                 }
 
-                expandedFeatures.push(...subtreeStruct);
+                for (const element of subtreeStruct) {
+                    expandedNodes.push(element);
+                }
             }
 
             delete node.subtree;
-            node.feature = [...(node.feature || []), ...expandedFeatures];
+
+            for (const expanded of expandedNodes) {
+                const tagName = Object.keys(expanded)[0];
+                node[tagName] = [...(node[tagName] || []), ...expanded[tagName]];
+            }
         }
 
         for (const key of Object.keys(node)) {
@@ -55,4 +61,5 @@ export class SubTreePreprocessor {
             }
         }
     }
+
 }

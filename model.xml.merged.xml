@@ -13,16 +13,12 @@
   <struct>
     <and name="Root">
       <feature name="MainFeature"/>
-      <feature>
-        <and name="Sub1Root">
-          <feature name="SubFeature1"/>
-        </and>
-      </feature>
-      <feature>
-        <and name="Sub2Root">
-          <feature name="SubFeature2"/>
-        </and>
-      </feature>
+      <and name="Sub1Root">
+        <feature name="SubFeature1"/>
+      </and>
+      <and name="Sub2Root">
+        <feature name="SubFeature2"/>
+      </and>
     </and>
   </struct>
 </featureModel>
