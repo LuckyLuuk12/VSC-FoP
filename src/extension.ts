@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     //  Tree provider 
     const featureTreeProvider = new FeatureTreeProvider();
     vscode.window.registerTreeDataProvider('featureTreeView', featureTreeProvider);
-    
+
     //  Tree visualization webview
     const treeVisualization = new FeatureTreeVisualization(context.extensionPath, javaBridge);
     
@@ -48,13 +48,13 @@ export async function activate(context: vscode.ExtensionContext) {
         // Look for model.xml in workspace root
         console.log("[FOP] Searching for model.xml in workspace root...");
         const modelFiles = await vscode.workspace.findFiles("model.xml", null);
-        
+
         console.log(`[FOP] Found ${modelFiles.length} model.xml file(s)`);
         if (modelFiles.length === 0) {
             console.log("[FOP] No model.xml found in workspace root");
             return false;
         }
-        
+
         modelFiles.forEach((file, index) => {
             console.log(`[FOP] Model ${index + 1}: ${file.fsPath}`);
         });
@@ -63,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const modelPath = modelFiles[0].fsPath;
             console.log(`[FOP] Loading model from: ${modelPath}`);
             const modelData = await javaBridge.loadModel(modelPath);
-            
+
             if (modelData.status === "ok") {
                 currentModelPath = modelPath;
                 featureTreeProvider.setModel(modelData);
@@ -98,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         try {
             const modelData = await javaBridge.loadModel(file[0].fsPath);
-            
+
             if (modelData.status === "ok") {
                 currentModelPath = file[0].fsPath;
                 featureTreeProvider.setModel(modelData);
@@ -142,8 +142,92 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const buildVariant = vscode.commands.registerCommand("fop.buildVariant", async () => {
-        const result = await javaBridge.call(["buildVariant"]);
-        vscode.window.showInformationMessage("Variant built:\n" + result);
+        
+        // Prompt for config file
+        const configFile = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            filters: { "Config Files": ["xml", "config"] },
+            title: "Select Configuration File"
+        });
+        if (!configFile) return;
+        const configPath = configFile[0].fsPath;
+
+        console.log("[FOP] Searching for features folder in workspace root...");
+        const workspaceRoot = workspace!.uri.fsPath;
+        const featuresDir = path.join(workspaceRoot, "features");
+        let featureFolder: string | undefined;
+        if (fs.existsSync(featuresDir) && fs.statSync(featuresDir).isDirectory()) {
+            featureFolder = featuresDir;
+        } else {
+            const picked = await vscode.window.showOpenDialog({
+                canSelectFiles: false,
+                canSelectFolders: true,
+                title: "Select Features Folder"
+            });
+            if (!picked || picked.length === 0) return;
+            featureFolder = picked[0].fsPath;
+        }
+        if (!featureFolder) return;
+
+        console.log("[FOP] Searching for output 'src' folder in workspace root...");
+        const srcDir = path.join(workspaceRoot, "src");
+        let outputFolder: string | undefined;
+        if (fs.existsSync(srcDir) && fs.statSync(srcDir).isDirectory()) {
+            outputFolder = srcDir;
+        } else {
+            const picked = await vscode.window.showOpenDialog({
+                canSelectFiles: false,
+                canSelectFolders: true,
+                title: "Select Output src Folder"
+            });
+            if (!picked || picked.length === 0) return;
+            outputFolder = picked[0].fsPath;
+        }
+        if (!outputFolder) return;
+
+        // Create temp directory in workspace root
+        const workspaceRoot = workspace!.uri.fsPath;
+
+        // Update VS Code settings to exclude temp directory from Java project
+        const vscodeDir = path.join(workspaceRoot, '.vscode');
+        const settingsFile = path.join(vscodeDir, 'settings.json');
+        const relativeTmpPath = '.tmp/**';
+
+        // Ensure .vscode directory exists
+        if (!fs.existsSync(vscodeDir)) {
+            fs.mkdirSync(vscodeDir, { recursive: true });
+        }
+
+        // Read or create settings.json
+        let settings: any = {};
+        if (fs.existsSync(settingsFile)) {
+            try {
+                const content = fs.readFileSync(settingsFile, 'utf-8');
+                settings = JSON.parse(content);
+            } catch (error) {
+                console.warn('[FOP] Could not parse settings.json, creating new one');
+            }
+        }
+
+        // Add excluded path if not present
+        if (!settings['java.project.excludedPaths']) {
+            settings['java.project.excludedPaths'] = [];
+        }
+
+        if (!settings['java.project.excludedPaths'].includes(relativeTmpPath)) {
+            settings['java.project.excludedPaths'].push(relativeTmpPath);
+            fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 4), 'utf-8');
+            console.log('[FOP] Added .tmp/** to java.project.excludedPaths');
+        }
+
+        try {
+            console.log(`building with config: ${configPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}`);
+            const result = await javaBridge.call(["buildVariant", configPath, featureFolder, outputFolder]);
+            vscode.window.showInformationMessage("Backend result:\n" + result);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error building variant: ${error}`);
+        }
     });
 
     const openConfigInConfigurator = vscode.commands.registerCommand("fop.openConfigInConfigurator", async (uri?: vscode.Uri) => {
@@ -177,4 +261,4 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant, openConfigInConfigurator, createNewConfig);
 }
 
-export function deactivate() {}
+export function deactivate() { }

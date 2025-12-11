@@ -35,13 +35,16 @@ The extension consists of two main components:
 
 ## Building
 
-### TypeScript Extension
+
 ```bash
 npm install
-npm run compile
+npm run build
 ```
 
 ### Java Backend
+
+> [!CAUTION]
+> `npm run build` now ensures all dependencies are installed and everything gets compiled. No need for any of the commands below:
 
 **First time setup (Windows):**
 ```bash
@@ -66,7 +69,7 @@ wget -O lib/FeatureHouse.jar "https://www.se.cs.uni-saarland.de/apel/fh/deploy/F
 1. Clone this repository
 2. Build both the TypeScript extension and Java backend
 3. Open the project in VS Code
-4. Press F5 to launch the extension in debug mode
+4. Open `src/extension.ts`, press F5, and select the 'VS Code Extension Development' option to launch the extension in debug mode
 
 ## Usage
 

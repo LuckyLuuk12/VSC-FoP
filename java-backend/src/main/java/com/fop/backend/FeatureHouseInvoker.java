@@ -1,111 +1,89 @@
 package com.fop.backend;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class FeatureHouseInvoker {
 
     public static String buildVariant(
-            String configFilePath, 
-            String featuresFolderPath, 
+            String configFilePath,
+            String featuresFolderPath,
             String outputFolderPath) {
-        
-        if (!featuresFolderPath.endsWith("/")) {
-            featuresFolderPath = featuresFolderPath + "/";
+        File configFile = new File(configFilePath);
+        File featuresFolder = new File(featuresFolderPath);
+
+        Path outputFolderPathObj = Paths.get(outputFolderPath);
+        outputFolderPath = outputFolderPathObj.toAbsolutePath().toString();
+        int i = outputFolderPath.lastIndexOf(File.separator);
+        System.out.println("Path Seperator: " + File.separator + " outputFolderPath: " + outputFolderPath);
+        System.out.println("Output path split at index: " + i );
+        String outputPath = outputFolderPath.substring(0, i);
+        System.out.println("Output path: " + outputPath);
+        String outputFolder = outputFolderPath.substring(i);
+        System.out.println("Output folder: " + outputFolder);
+
+        if (!configFile.exists()) {
+            return "Cannot find config file";
         }
 
-        String tmpFilePath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f.features";
-        String tmpFolderPath = featuresFolderPath + "tmp_58131bc547fb87af94cebdaf3102321f";
+        if (!featuresFolder.isDirectory()) {
+            return "Cannot find features folder";
+        }
+        File outputPathFile = new File(outputPath);
+        if (!outputPathFile.exists()) {
+            outputPathFile.mkdirs();
+        }
 
-        ConfigHandler ch = new ConfigHandler();
+        // Generate unique temporary folder name with timestamp-based UUID
+        String tmpFilePath = outputFolderPath + ".features";
+        File tmpFile = new File(tmpFilePath);
+
+        System.out.println("Temp file path: " + tmpFilePath);
+
         try {
-            String out = ch.makeFeatureFileFromConfig(
-                    configFilePath, tmpFilePath);
+            ConfigHandler.makeFeatureFileFromConfig(
+                    configFile, tmpFile);
         } catch (Exception e) {
             return "Error creating feature file from configuration: " + e.getMessage();
         }
 
-        ProcessBuilder pb = new ProcessBuilder(
-            "java", "-jar", 
-            "./lib/FeatureHouse.jar", 
-            "--expression", tmpFilePath,
-            "--base-directory", featuresFolderPath
-        );
-
-        pb.redirectErrorStream(true); // merge stdout & stderr
-        Process process;
+        // Call FeatureHouse directly instead of spawning a process
         try {
-            process = pb.start();
-            // Read output
-            try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream())
-            )) {
-                String line; 
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-        } catch (IOException e) {
-            return "FH_IO_ERROR:" + e;
-        }                            
 
+            String[] fhArgs = {
+                    "--expression", tmpFilePath,
+                    "--base-directory", featuresFolderPath,
+                    "--output-directory", outputPath
+            };
 
-        try {
-            switch (process.waitFor()) {
-                case 0:
-                    deleteFile(tmpFilePath);
-                    moveFolder(tmpFolderPath, outputFolderPath);
-                    return "Built Variant Successfully";
-                case 1:
-                    return "FH_FAILURE";
-                default:
-                    return "FH_UNKNOWN_ERRCODE";
+            System.out.println("Calling FeatureHouse with args:");
+            System.out.println("  --expression: " + tmpFilePath);
+            System.out.println("  --base-directory: " + featuresFolderPath);
+            System.out.println("  --output-directory: " + outputPath);
+
+            // Invoke FeatureHouse main method
+            composer.FSTGenComposer.main(fhArgs);
+
+            // If we get here, FeatureHouse succeeded
+            System.out.println("FeatureHouse completed successfully");
+
+            boolean tmpFileDeleted = tmpFile.delete();
+            System.out.println("Deleted temp .features file: " + tmpFileDeleted);
+
+            return "Built Variant Successfully";
+
+        } catch (Exception e) {
+            // Build detailed error message
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("FeatureHouse error: ").append(e.getClass().getName());
+            if (e.getMessage() != null) {
+                errorMsg.append("\nMessage: ").append(e.getMessage());
             }
-        } catch (Exception e) { 
-            return "FH_INTERRUPTED:" + e;
+            if (e.getCause() != null) {
+                errorMsg.append("\nCause: ").append(e.getCause().getMessage());
+            }
+            return errorMsg.toString();
         }
     }
-
-    private static void deleteFile(String filePath) {
-        try {
-            Path path = Paths.get(filePath).toAbsolutePath();
-            Files.delete(path);  
-
-            System.out.println("removed: " + path);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-    }
-
-    private static void moveFolder(String sourcePath, String targetPath) {
-        try {
-            Path sourceDir = Paths.get(sourcePath).toAbsolutePath();
-            Path targetDir = Paths.get(targetPath).toAbsolutePath();
-            
-            if (!Files.exists(targetDir)) {
-                Files.createDirectories(targetDir);
-            }
-
-            try (var stream = Files.list(sourceDir)) {
-                stream.forEach(src -> {
-                    try {
-                        Files.move(
-                            src,
-                            targetDir.resolve(src.getFileName()),
-                            StandardCopyOption.REPLACE_EXISTING
-                        );
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-
-            Files.delete(sourceDir);
-
-            System.out.println(sourcePath + " -> " + targetPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }

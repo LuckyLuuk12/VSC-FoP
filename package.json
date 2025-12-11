@@ -91,7 +91,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "download-featurehouse": "node -e \"const https = require('https'); const fs = require('fs'); const path = require('path'); const dir = path.join('java-backend', 'lib'); if (!fs.existsSync(dir)) fs.mkdirSync(dir, {recursive: true}); const file = fs.createWriteStream(path.join(dir, 'FeatureHouse.jar')); if (fs.existsSync(path.join(dir, 'FeatureHouse.jar'))) { console.log('FeatureHouse.jar already exists, skipping download'); process.exit(0); } https.get('https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar', (res) => { res.pipe(file); file.on('finish', () => { file.close(); console.log('FeatureHouse.jar downloaded successfully'); }); }).on('error', (err) => { fs.unlink(path.join(dir, 'FeatureHouse.jar'), () => {}); console.error('Error downloading FeatureHouse.jar:', err.message); process.exit(1); });\"",
+    "build-backend": "cd java-backend && .\\gradlew build",
+    "build": "npm run download-featurehouse && npm run build-backend && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts"
   },

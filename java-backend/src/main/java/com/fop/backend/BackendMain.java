@@ -33,10 +33,10 @@ public class BackendMain {
                 break;
 
             case "buildVariant":
-                if (args.length < 3) {
+                if (args.length < 4) {
                     System.out.println(
-                            "usage: buildVariant " + 
-                            "<configFile> <featuresFolder> <outputFolder>");
+                            "usage: buildVariant " +
+                                    "<configFile> <featuresFolder> <outputFolder>");
                     return;
                 }
                 String configFilePath = args[1];
