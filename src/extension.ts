@@ -147,36 +147,37 @@ export async function activate(context: vscode.ExtensionContext) {
         const configPath = configFile[0].fsPath;
 
         console.log("[FOP] Searching for features folder in workspace root...");
-        const foundFeatFolders = await vscode.workspace.findFiles("features", null);
-        let featfolder = foundFeatFolders;
-
-        if (featfolder.length === 0) {
+        const workspaceRoot = workspace!.uri.fsPath;
+        const featuresDir = path.join(workspaceRoot, "features");
+        let featureFolder: string | undefined;
+        if (fs.existsSync(featuresDir) && fs.statSync(featuresDir).isDirectory()) {
+            featureFolder = featuresDir;
+        } else {
             const picked = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
                 canSelectFolders: true,
                 title: "Select Features Folder"
             });
             if (!picked || picked.length === 0) return;
-            featfolder = picked;
+            featureFolder = picked[0].fsPath;
         }
-        if (featfolder.length === 0) return;
-        const featureFolder = featfolder[0].fsPath;
+        if (!featureFolder) return;
 
         console.log("[FOP] Searching for output 'src' folder in workspace root...");
-        const foundSrcFolders = await vscode.workspace.findFiles("src", null);
-        let outfolder = foundSrcFolders;
-
-        if (outfolder.length === 0) {
+        const srcDir = path.join(workspaceRoot, "src");
+        let outputFolder: string | undefined;
+        if (fs.existsSync(srcDir) && fs.statSync(srcDir).isDirectory()) {
+            outputFolder = srcDir;
+        } else {
             const picked = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
                 canSelectFolders: true,
                 title: "Select Output src Folder"
             });
             if (!picked || picked.length === 0) return;
-            outfolder = picked;
+            outputFolder = picked[0].fsPath;
         }
-        if (outfolder.length === 0) return;
-        const outputFolder = outfolder[0].fsPath;
+        if (!outputFolder) return;
 
         // Create temp directory in workspace root
         const workspaceRoot = workspace!.uri.fsPath;
