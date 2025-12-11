@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { FeatureTreeProvider } from './FeatureTreeProvider';
 import { FeatureTreeVisualization } from './FeatureTreeVisualization';
 import { JavaBridge } from './JavaBridge';
+import { ConfiguratorBuilder } from './ConfiguratorBuilder';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -38,6 +39,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     //  Tree visualization webview
     const treeVisualization = new FeatureTreeVisualization(context.extensionPath, javaBridge);
+    
+    //  Configurator builder
+    const configuratorBuilder = new ConfiguratorBuilder(context.extensionPath);
 
     // Helper function to detect and load FOP model
     async function detectAndLoadModel(): Promise<boolean> {
@@ -64,6 +68,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 currentModelPath = modelPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, modelPath);
+                configuratorBuilder.setModel(modelData);
                 treeVisualization.show();
                 vscode.window.showInformationMessage(`FOP model loaded from ${path.basename(path.dirname(modelPath))}`);
                 return true;
@@ -80,6 +85,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Auto-load model on activation
     await detectAndLoadModel();
+
+    // Variable to store the selected configuration file path
+    let selectedConfigPath: string | undefined;
+
+    // Check for default config
+    if (workspace) {
+        const defaultConfigPath = path.join(workspace.uri.fsPath, 'configs', 'default.xml');
+        if (fs.existsSync(defaultConfigPath)) {
+            selectedConfigPath = defaultConfigPath;
+            console.log(`[FOP] Default config found: ${defaultConfigPath}`);
+            vscode.window.showInformationMessage(`Default configuration selected: configs/default.xml`);
+        }
+    }
 
     //  Commands 
     const loadModel = vscode.commands.registerCommand("fop.loadModel", async () => {
@@ -98,6 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 currentModelPath = file[0].fsPath;
                 featureTreeProvider.setModel(modelData);
                 treeVisualization.setModel(modelData, file[0].fsPath);
+                configuratorBuilder.setModel(modelData);
                 vscode.window.showInformationMessage("Model loaded successfully.");
             } else {
                 vscode.window.showErrorMessage(`Failed to load model: ${modelData.message}`);
@@ -115,6 +134,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 if (modelData.status === "ok") {
                     featureTreeProvider.setModel(modelData);
                     treeVisualization.setModel(modelData, currentModelPath);
+                    configuratorBuilder.setModel(modelData);
                     vscode.window.showInformationMessage("Model reloaded successfully.");
                 } else {
                     vscode.window.showErrorMessage(`Failed to reload model: ${modelData.message}`);
@@ -134,17 +154,37 @@ export async function activate(context: vscode.ExtensionContext) {
         treeVisualization.show();
     });
 
+    const selectConfigFile = vscode.commands.registerCommand("fop.selectConfigFile", async (uri?: vscode.Uri) => {
+        if (uri) {
+            selectedConfigPath = uri.fsPath;
+        } else {
+            const configFile = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                filters: { "Config Files": ["xml", "config"] },
+                title: "Select Configuration File"
+            });
+            if (!configFile) return;
+            selectedConfigPath = configFile[0].fsPath;
+        }
+        vscode.window.showInformationMessage(`Configuration file selected: ${path.basename(selectedConfigPath!)}`);
+    });
+
     const buildVariant = vscode.commands.registerCommand("fop.buildVariant", async () => {
         
-        // Prompt for config file
-        const configFile = await vscode.window.showOpenDialog({
-            canSelectFiles: true,
-            canSelectFolders: false,
-            filters: { "Config Files": ["xml", "config"] },
-            title: "Select Configuration File"
-        });
-        if (!configFile) return;
-        const configPath = configFile[0].fsPath;
+        // Determine config file to use
+        let configPath = selectedConfigPath;
+
+        if (!configPath) {
+            const configFile = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                filters: { "Config Files": ["xml", "config"] },
+                title: "Select Configuration File"
+            });
+            if (!configFile) return;
+            configPath = configFile[0].fsPath;
+        }
 
         console.log("[FOP] Searching for features folder in workspace root...");
         const workspaceRoot = workspace!.uri.fsPath;
@@ -180,8 +220,7 @@ export async function activate(context: vscode.ExtensionContext) {
         if (!outputFolder) return;
 
         // Create temp directory in workspace root
-        const workspaceRoot = workspace!.uri.fsPath;
-
+        
         // Update VS Code settings to exclude temp directory from Java project
         const vscodeDir = path.join(workspaceRoot, '.vscode');
         const settingsFile = path.join(vscodeDir, 'settings.json');
@@ -223,7 +262,35 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant);
+    const openConfigInConfigurator = vscode.commands.registerCommand("fop.openConfigInConfigurator", async (uri?: vscode.Uri) => {
+        let configPath: string | undefined;
+        
+        if (uri) {
+            // Called from context menu
+            configPath = uri.fsPath;
+        } else {
+            // Called from command palette
+            const file = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                filters: { 'XML Files': ['xml'] },
+                title: "Select Configuration File"
+            });
+            if (file && file.length > 0) {
+                configPath = file[0].fsPath;
+            }
+        }
+        
+        if (configPath) {
+            await configuratorBuilder.openConfig(configPath);
+        }
+    });
+
+    const createNewConfig = vscode.commands.registerCommand("fop.createNewConfig", async () => {
+        await configuratorBuilder.openConfig();
+    });
+
+    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant, openConfigInConfigurator, createNewConfig, selectConfigFile);
 }
 
 export function deactivate() { }

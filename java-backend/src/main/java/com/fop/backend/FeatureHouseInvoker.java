@@ -45,7 +45,7 @@ public class FeatureHouseInvoker {
             ConfigHandler.makeFeatureFileFromConfig(
                     configFile, tmpFile);
         } catch (Exception e) {
-            return "Error making the feature file:\n" + e;
+            return "Error creating feature file from configuration: " + e.getMessage();
         }
 
         // Call FeatureHouse directly instead of spawning a process
