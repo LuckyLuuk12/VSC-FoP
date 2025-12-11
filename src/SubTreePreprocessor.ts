@@ -16,12 +16,12 @@ export class SubTreePreprocessor {
     }
 
     private async expandSubTrees(node: any, basePath: string): Promise<void> {
-        if (typeof node !== "object") return;
+        if (typeof node !== "object" || node === null) return;
 
-        if (node.SubTree) {
+        if (node.subtree && Array.isArray(node.subtree)) {
             const expandedFeatures: any[] = [];
 
-            for (const subtree of node.SubTree) {
+            for (const subtree of node.subtree) {
                 const name = subtree.$.name;
                 const subtreePath = path.join(basePath, name, "model.xml");
 
@@ -32,19 +32,24 @@ export class SubTreePreprocessor {
                 const xml = fs.readFileSync(subtreePath, "utf8");
                 const json = await this.parser.parseStringPromise(xml);
 
-                const subtreeRoot = json.model.feature[0];
+                const subtreeStruct = json.featureModel?.struct;
+                if (!subtreeStruct) {
+                    throw new Error(`SubTree "${name}" has no <struct> section`);
+                }
 
-                expandedFeatures.push(subtreeRoot);
+                expandedFeatures.push(...subtreeStruct);
             }
 
-            delete node.SubTree;
+            delete node.subtree;
             node.feature = [...(node.feature || []), ...expandedFeatures];
         }
 
-        for (const k of Object.keys(node)) {
-            const child = node[k];
+        for (const key of Object.keys(node)) {
+            const child = node[key];
             if (Array.isArray(child)) {
-                for (const c of child) await this.expandSubTrees(c, basePath);
+                for (const c of child) {
+                    await this.expandSubTrees(c, basePath);
+                }
             } else if (typeof child === "object") {
                 await this.expandSubTrees(child, basePath);
             }
