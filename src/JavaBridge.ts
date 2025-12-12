@@ -49,13 +49,26 @@ export class JavaBridge {
         });
     }
 
-async loadModel(modelPath: string): Promise<any> {
-    const preprocessor = new SubTreePreprocessor();
-    const processedXML = await preprocessor.preprocess(modelPath);
+    async loadModel(modelPath: string): Promise<any> {
+        const preprocessor = new SubTreePreprocessor();
+        const processedXML = await preprocessor.preprocess(modelPath);
 
-    const tempPath = modelPath + ".merged.xml";
-    fs.writeFileSync(tempPath, processedXML, "utf8");
+        const tempPath = modelPath + ".merged.xml";
+        fs.writeFileSync(tempPath, processedXML, "utf8");
 
-    return await this.call(["loadModel", tempPath]);
-}
+        console.log(`[JavaBridge] Loading merged model from: ${tempPath}`);
+
+        const result = await this.call(["loadModel", tempPath]);
+
+        if (!result || result.trim().length === 0) {
+            throw new Error("Java backend returned empty response");
+        }
+
+        try {
+            return JSON.parse(result);
+        } catch (error) {
+            console.error(`[JavaBridge] Failed to parse JSON. Raw output: ${result}`);
+            throw new Error(`Failed to parse model data: ${error}. Raw output: ${result}`);
+        }
+    }
 }
