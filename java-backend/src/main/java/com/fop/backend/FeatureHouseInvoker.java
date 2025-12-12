@@ -16,12 +16,7 @@ public class FeatureHouseInvoker {
         Path outputFolderPathObj = Paths.get(outputFolderPath);
         outputFolderPath = outputFolderPathObj.toAbsolutePath().toString();
         int i = outputFolderPath.lastIndexOf(File.separator);
-        System.out.println("Path Seperator: " + File.separator + " outputFolderPath: " + outputFolderPath);
-        System.out.println("Output path split at index: " + i );
         String outputPath = outputFolderPath.substring(0, i);
-        System.out.println("Output path: " + outputPath);
-        String outputFolder = outputFolderPath.substring(i);
-        System.out.println("Output folder: " + outputFolder);
 
         if (!configFile.exists()) {
             return "Cannot find config file";
@@ -39,7 +34,7 @@ public class FeatureHouseInvoker {
         String tmpFilePath = outputFolderPath + ".features";
         File tmpFile = new File(tmpFilePath);
 
-        System.out.println("Temp file path: " + tmpFilePath);
+        //System.out.println("Temp file path: " + tmpFilePath);
 
         try {
             ConfigHandler.makeFeatureFileFromConfig(
@@ -57,16 +52,15 @@ public class FeatureHouseInvoker {
                     "--output-directory", outputPath
             };
 
-            System.out.println("Calling FeatureHouse with args:");
-            System.out.println("  --expression: " + tmpFilePath);
-            System.out.println("  --base-directory: " + featuresFolderPath);
-            System.out.println("  --output-directory: " + outputPath);
-
+            //System.out.println("Calling FeatureHouse with args:");
+            //System.out.println("  --expression: \n" + tmpFilePath);
+            //System.out.println("  --base-directory: \n" + featuresFolderPath);
+            //System.out.println("  --output-directory: \n" + outputPath + "\n\n");
             // Invoke FeatureHouse main method
             composer.FSTGenComposer.main(fhArgs);
 
             // If we get here, FeatureHouse succeeded
-            System.out.println("FeatureHouse completed successfully");
+            System.out.println("\nFeatureHouse completed successfully");
 
             boolean tmpFileDeleted = tmpFile.delete();
             System.out.println("Deleted temp .features file: " + tmpFileDeleted);

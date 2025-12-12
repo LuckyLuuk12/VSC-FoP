@@ -40,7 +40,8 @@
       },
       {
         "command": "fop.buildVariant",
-        "title": "FOP: Build Variant"
+        "title": "FOP: Build Variant",
+        "icon": "$(debug-start)"
       },
       {
         "command": "fop.openConfigInConfigurator",
@@ -62,6 +63,11 @@
         },
         {
           "command": "fop.showTreeVisualization",
+          "when": "view == featureTreeView",
+          "group": "navigation"
+        },
+        {
+          "command": "fop.buildVariant",
           "when": "view == featureTreeView",
           "group": "navigation"
         }
