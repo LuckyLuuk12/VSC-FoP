@@ -89,6 +89,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // Variable to store the selected configuration file path
     let selectedConfigPath: string | undefined;
 
+    // Create status bar item for selected config
+    const configStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    configStatusBar.command = 'fop.selectConfigFile';
+    configStatusBar.tooltip = 'Click to select a configuration file';
+
     // Check for default config
     if (workspace) {
         const defaultConfigPath = path.join(workspace.uri.fsPath, 'configs', 'default.xml');
@@ -96,6 +101,18 @@ export async function activate(context: vscode.ExtensionContext) {
             selectedConfigPath = defaultConfigPath;
             console.log(`[FOP] Default config found: ${defaultConfigPath}`);
             vscode.window.showInformationMessage(`Default configuration selected: configs/default.xml`);
+            configStatusBar.text = `$(settings) Config: ${path.basename(defaultConfigPath)}`;
+            configStatusBar.show();
+        }
+    }
+
+    // Helper function to update status bar
+    function updateConfigStatusBar() {
+        if (selectedConfigPath) {
+            configStatusBar.text = `$(settings) Config: ${path.basename(selectedConfigPath)}`;
+            configStatusBar.show();
+        } else {
+            configStatusBar.hide();
         }
     }
 
@@ -161,29 +178,25 @@ export async function activate(context: vscode.ExtensionContext) {
             const configFile = await vscode.window.showOpenDialog({
                 canSelectFiles: true,
                 canSelectFolders: false,
-                filters: { "Config Files": ["xml", "config"] },
+                filters: { "Config Files": ["xml"] },
                 title: "Select Configuration File"
             });
             if (!configFile) return;
             selectedConfigPath = configFile[0].fsPath;
         }
+        updateConfigStatusBar();
         vscode.window.showInformationMessage(`Configuration file selected: ${path.basename(selectedConfigPath!)}`);
     });
 
     const buildVariant = vscode.commands.registerCommand("fop.buildVariant", async () => {
         
         // Determine config file to use
-        let configPath = selectedConfigPath;
-
-        if (!configPath) {
-            const configFile = await vscode.window.showOpenDialog({
-                canSelectFiles: true,
-                canSelectFolders: false,
-                filters: { "Config Files": ["xml", "config"] },
-                title: "Select Configuration File"
-            });
-            if (!configFile) return;
-            configPath = configFile[0].fsPath;
+        if (!selectedConfigPath) {
+            vscode.commands.executeCommand("fop.selectConfigFile");
+            if (!selectedConfigPath) {
+                vscode.window.showWarningMessage("No configuration file selected.");
+                return;
+            }
         }
 
         console.log("[FOP] Searching for features folder in workspace root...");
@@ -254,9 +267,10 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            console.log(`building with config: ${configPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}`);
-            const result = await javaBridge.call(["buildVariant", configPath, featureFolder, outputFolder]);
-            vscode.window.showInformationMessage("Backend result:\n" + result);
+            console.log(`building with config: ${selectedConfigPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}`);
+            const result = await javaBridge.call(["buildVariant", selectedConfigPath, featureFolder, outputFolder]);
+            vscode.window.showInformationMessage(`Building:\n${selectedConfigPath}`);
+            vscode.window.showInformationMessage(result);
         } catch (error) {
             vscode.window.showErrorMessage(`Error building variant: ${error}`);
         }
@@ -290,7 +304,7 @@ export async function activate(context: vscode.ExtensionContext) {
         await configuratorBuilder.openConfig();
     });
 
-    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant, openConfigInConfigurator, createNewConfig, selectConfigFile);
+    context.subscriptions.push(loadModel, refreshModel, showTreeVisualization, buildVariant, openConfigInConfigurator, createNewConfig, selectConfigFile, configStatusBar);
 }
 
 export function deactivate() { }
