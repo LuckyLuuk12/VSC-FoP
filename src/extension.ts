@@ -269,7 +269,8 @@ export async function activate(context: vscode.ExtensionContext) {
         try {
             console.log(`building with config: ${selectedConfigPath}\nfeature folder: ${featureFolder}\noutputFolder: ${outputFolder}`);
             const result = await javaBridge.call(["buildVariant", selectedConfigPath, featureFolder, outputFolder]);
-            vscode.window.showInformationMessage("Running buildVariant:\n"+result);
+            vscode.window.showInformationMessage(`Building:\n${selectedConfigPath}`);
+            vscode.window.showInformationMessage(result);
         } catch (error) {
             vscode.window.showErrorMessage(`Error building variant: ${error}`);
         }
