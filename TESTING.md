@@ -12,8 +12,12 @@ Create a test folder with this structure:
 ```
 test-project/
   model.xml
+  features/
+    <insert feature files here>
   src/
-    Main.java (optional)
+    <can be empty>
+  configs/
+    <insert config files here>
 ```
 
 ## Debugging Tips
@@ -44,10 +48,16 @@ Look for these log messages:
 Test the Java backend directly:
 ```powershell
 java -jar "java-backend\build\libs\backend-1.0.0.jar" loadModel "path\to\model.xml"
+java -jar "java-backend\build\libs\backend-1.0.0.jar" saveModel "path\to\model.xml" jsonData
+java -jar "java-backend\build\libs\backend-1.0.0.jar" buildVariant configFile featuresFolder outputFolder
 ```
 
 ## VS Code Commands
 
 - **Ctrl+Shift+P** -> `FOP: Load Model` - Manually load a model
 - **Ctrl+Shift+P** -> `FOP: Refresh Model` - Reload from workspace
+- **Ctrl+Shift+P** -> `FOP: Build Variant` - Build a variant
 - Click refresh icon in Feature Model tree view
+- Click green run icon in Feature Model to build a config
+- Click the config button in the bottom statusbar to set a config.
+
