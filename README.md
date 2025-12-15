@@ -18,56 +18,14 @@ This extension provides Feature-Oriented Programming (FOP) capabilities in Visua
 - **Build Variant Command**: Build specific product variants based on feature configurations
 - **Configuration Builder**: Graphical interface to create and edit feature configurations with real-time constraint validation
 
-## Architecture
+## Installation
 
-The extension consists of two main components:
-
-### TypeScript Extension (VSCode Frontend)
-- `src/extension.ts` - Extension entry point and command registration
-- `src/FeatureTreeProvider.ts` - Tree view data provider for feature visualization
-- `src/FeatureItem.ts` - Tree item model for features
-- `src/JavaBridge.ts` - Bridge to communicate with Java backend
-
-### Java Backend
-- `java-backend/src/main/java/com/fop/backend/BackendMain.java` - Main entry point
-- `java-backend/src/main/java/com/fop/backend/ModelLoader.java` - Feature model loading
-- `java-backend/src/main/java/com/fop/backend/FeatureHouseInvoker.java` - Feature composition
-
-## Building
-
-
+1. Clone this repository
+2. Build the extension by running:
 ```bash
 npm install
 npm run build
 ```
-
-### Java Backend
-
-> [!CAUTION]
-> `npm run build` now ensures all dependencies are installed and everything gets compiled. No need for any of the commands below:
-
-**First time setup (Windows):**
-```bash
-cd java-backend
-# Download Gradle wrapper jar
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
-Invoke-WebRequest -Uri "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar" -OutFile "lib\FeatureHouse.jar" 
-# Build the project
-.\gradlew.bat build
-```
-
-**Unix/Linux/Mac:**
-```bash
-cd java-backend
-wget -O ./gradle/wrapper/gradle-wrapper.jar "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
-wget -O lib/FeatureHouse.jar "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar"
-./gradlew build
-```
-
-## Installation
-
-1. Clone this repository
-2. Build both the TypeScript extension and Java backend
 3. Open the project in VS Code
 4. Open `src/extension.ts`, press F5, and select the 'VS Code Extension Development' option to launch the extension in debug mode
 
@@ -126,7 +84,6 @@ Example model structure:
   </struct>
 </featureModel>
 ```
-
 ## Commands
 
 - `FOP: Load Model` - Manually load a feature model from any location
@@ -134,3 +91,42 @@ Example model structure:
 - `FOP: Build Variant` - Build a product variant from a configuration
 - `FOP: Create New Config` - Open the configuration builder for a new configuration
 - `FOP: Open Config in Configurator` - Open an existing configuration file in the builder
+
+
+## Architecture
+
+The extension consists of two main components:
+
+### TypeScript Extension (VSCode Frontend)
+- `src/extension.ts` - Extension entry point and command registration
+- `src/FeatureTreeProvider.ts` - Tree view data provider for feature visualization
+- `src/FeatureItem.ts` - Tree item model for features
+- `src/JavaBridge.ts` - Bridge to communicate with Java backend
+
+### Java Backend
+- `java-backend/src/main/java/com/fop/backend/BackendMain.java` - Main entry point
+- `java-backend/src/main/java/com/fop/backend/ModelLoader.java` - Feature model loading
+- `java-backend/src/main/java/com/fop/backend/FeatureHouseInvoker.java` - Feature composition
+### Java Backend
+
+The Java backend is built and set up by node, if it needs to be tested and run without using node one can built it seperately like this:
+
+**First time setup (Windows):**
+```bash
+cd java-backend
+# Download Gradle wrapper jar
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
+Invoke-WebRequest -Uri "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar" -OutFile "lib\FeatureHouse.jar" 
+# Build the project
+.\gradlew.bat build
+```
+
+**Unix/Linux/Mac:**
+```bash
+cd java-backend
+wget -O ./gradle/wrapper/gradle-wrapper.jar "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
+wget -O lib/FeatureHouse.jar "https://www.se.cs.uni-saarland.de/apel/fh/deploy/FeatureHouse-2011-03-15.jar"
+./gradlew build
+```
+
+
